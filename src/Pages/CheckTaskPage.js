@@ -49,7 +49,7 @@ const CheckTaskPage = () => {
       setError('문서 제목을 로드하는 중 오류가 발생했습니다: ' + error.message);
     });
 
-    ApiService.fetchDocument(documentId)
+    ApiService.generateReviewDocument(documentId)
       .then(response => {
         const fileBlob = new Blob([response.data], { type: 'application/pdf' });
         setSigning((prevState) => ({

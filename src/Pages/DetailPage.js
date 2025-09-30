@@ -63,6 +63,7 @@ const DetailPage = () => {
             4: "만료",
             6: "반려",
             7: "검토중",
+            8: "작성중",
         };
         return statusLabels[status] || "알 수 없음";
     };
@@ -76,6 +77,7 @@ const DetailPage = () => {
             4: { backgroundColor: "#555555", color: "#fff" },
             6: { backgroundColor: "#f5a623", color: "#fff" },
             7: { backgroundColor: "#b6c3f2", color: "#fff" },
+            8: { backgroundColor: "#03a9f4", color: "#fff" },
         };
         return statusStyles[status] || { backgroundColor: "#ccc", color: "#000" };
     };
