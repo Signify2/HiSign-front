@@ -1,16 +1,15 @@
 // DashBoardPage.js
 
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import styled from "styled-components";
-import moment from "moment";
-import ApiService from "../utils/ApiService";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DrawIcon from "@mui/icons-material/Draw";
+import EditIcon from "@mui/icons-material/Edit";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import SettingsIcon from "@mui/icons-material/Settings";
-import ShareIcon from "@mui/icons-material/Share";
-import EditIcon from "@mui/icons-material/Edit";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import moment from "moment";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import styled from "styled-components";
+import ApiService from "../utils/ApiService";
 
 function DashBoardPage() {
   const [recentDocuments, setRecentDocuments] = useState([]);
@@ -37,6 +36,7 @@ function DashBoardPage() {
             4: "만료",
             6: "반려됨",
             7: "검토중",
+            8: "작성자 서명중"
         };
         return statusLabels[status] || "알 수 없음";
     };
@@ -50,6 +50,7 @@ function DashBoardPage() {
             4: { backgroundColor: "#555555", color: "#fff" },  // 만료
             6: { backgroundColor: "#f5a623", color: "#fff" },  // 반려(교수님)
             7: { backgroundColor: "#b6c3f2", color: "#fff" },  // 검토중
+            8: { backgroundColor: "#3412f3ff", color: "#fff" },  // 작성자 서명중
         };
         return statusStyles[status] || { backgroundColor: "#ccc", color: "#000" };
     };
