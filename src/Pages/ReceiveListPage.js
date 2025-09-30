@@ -68,6 +68,7 @@ const ReceivedDocuments = () => {
             4: "만료",
             6: "반려됨",
             7: "검토중",
+            8: "작성자 서명중"
         };
         return statusLabels[status] || "알 수 없음";
     };
@@ -81,6 +82,7 @@ const ReceivedDocuments = () => {
             4: { backgroundColor: "#555555", color: "#fff" },  // 만료
             6: { backgroundColor: "#f5a623", color: "#fff" },  // 반려(교수님)
             7: { backgroundColor: "#b6c3f2", color: "#fff" },  // 검토중
+            8: { backgroundColor: "#3412f3ff", color: "#fff" },  // 작성중
         };
         return statusStyles[status] || { backgroundColor: "#ccc", color: "#000" };
     };
@@ -223,6 +225,7 @@ const ReceivedDocuments = () => {
                         <option value="3">취소</option>
                         <option value="4">만료</option>
                         <option value="7">검토중</option>
+                        <option value="8">작성자 서명중</option>
                     </select>
                 </div>
 

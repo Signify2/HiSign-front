@@ -92,6 +92,7 @@ const RequestedDocuments = () => {
             4: "만료",
             6: "반려됨",
             7: "검토중",
+            8: "작성자 서명중"
         };
         return statusLabels[status] || "알 수 없음";
     };
@@ -105,6 +106,7 @@ const RequestedDocuments = () => {
             4: { backgroundColor: "#555555", color: "#fff" },  // 만료
             6: { backgroundColor: "#f5a623", color: "#fff" },  // 반려(교수님)
             7: { backgroundColor: "#b6c3f2", color: "#fff" },  // 검토중
+            8: { backgroundColor: "#3412f3ff", color: "#fff" },  // 작성중
         };
         return statusStyles[status] || { backgroundColor: "#ccc", color: "#000" };
     };
@@ -251,6 +253,7 @@ const RequestedDocuments = () => {
                         <option value="3">취소</option>
                         <option value="4">만료</option>
                         <option value="7">검토중</option>
+                        <option value="8">작성자 서명중</option>
                     </select>
                 </div>
                 <div style={{display: "flex", alignItems: "center", gap: "6px", flexShrink: 0}}>
@@ -390,7 +393,21 @@ const RequestedDocuments = () => {
                                                         <FindInPageIcon fontSize="small" style={{marginRight: "6px"}}/>
                                                         문서 보기
                                                     </div>
-
+                                                    {doc.status === 8 && (
+                                                        <Link
+                                                            to={`/checkEmail?token=${doc.token}`}
+                                                            style={{
+                                                                ...iconButtonStyle,
+                                                                color:"#333",
+                                                                pointerEvents:"auto",
+                                                                textDecoration: "none",
+                                                            }}
+                                                            onClick={() => setOpenDropdownId(null)} // 드롭다운 닫기
+                                                            >
+                                                            <DrawIcon fontSize="small" />
+                                                            서명 하기
+                                                        </Link>
+                                                    )}
                                                     <div
                                                         onClick={() => {
                                                             if (doc.status === 1) {
@@ -468,6 +485,18 @@ const RequestedDocuments = () => {
                                             <FindInPageIcon fontSize="small" style={{marginRight: "6px"}}/>
                                             문서 보기
                                         </Link>
+                                        {doc.status == 8 && (
+                                            <Link to={`/checkEmail?token=${doc.token}`} style={{
+                                                display: "flex", alignItems: "center", padding: "5px 10px",
+                                                border: "1px solid #ccc", borderRadius: "5px",
+                                                textDecoration: "none",
+                                                color:"#007bff",
+                                                pointerEvents:"auto"
+                                            }}>
+                                                <DrawIcon fontSize="small" style={{marginRight: "6px"}}/>
+                                                서명 하기
+                                            </Link>
+                                        )}
                                         <button
                                             onClick={() => downloadPDF(doc.id)}
                                             disabled={doc.status !== 1}
