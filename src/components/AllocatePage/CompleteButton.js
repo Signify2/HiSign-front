@@ -63,11 +63,13 @@ const CompleteButton = () => {
         password: document.password,
         memberName: member.name,
         expirationDateTime: document.expirationDateTime,
-        signers: signers
+        signers: signers,
+        isSelfIncluded: selfIncluded, // ✅ 본인 서명 포함 여부
       };
-  
+      console.log("업로드 요청 DTO:", uploadRequestDTO);
       // ✅ fullUpload 호출
       const uploadResponse = await ApiService.fullUpload(file, uploadRequestDTO);
+      // goSignAfter가 true면 상태를 8(작성중)으로 업로드 혹은 이 상태도 같이 전달하여 상태를 8로 지정
 
       if (uploadResponse.status === 200) {
         const documentId = uploadResponse.data.documentId;
@@ -81,6 +83,7 @@ const CompleteButton = () => {
           file: null,
           isRejectable: null,
           fileType: null,
+          isSelfIncluded: false,
         });
         setSigners([]);
         if (goSignAfter) {
