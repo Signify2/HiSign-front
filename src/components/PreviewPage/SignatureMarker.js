@@ -7,33 +7,37 @@ const SignatureMarker = ({ signers,currentPage,scale }) => {
   if (!Array.isArray(signing.signatureFields)) {
     return null;  // ✅ 필드가 배열이 아니면 아무것도 렌더링하지 않음
   }
+  console.log("SignatureMarker 렌더링:", { signers, currentPage, scale, signing });
   return (
     <>
       {signers.flatMap((signer, index) =>
         signer.signatureFields
           .filter((field) => field.position.pageNumber === currentPage)
           .map((field, idx) => (
-            <div
-              key={`${signer.email}-${idx}`}
-              style={{
-                position: "absolute",
-                left: field.position.x * scale,
-                top: field.position.y * scale,
-                width: field.width * scale,
-                height: field.height * scale,
-                border: `2px dashed ${signer.color}`,
-                backgroundColor: `${signer.color}20`,
-                borderRadius: "6px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#000",
-                fontSize: "12px",
-                fontWeight: "bold",
-              }}
-            >
-              {signer.name}
-            </div>
+            field.imageName || (
+              // ✅ 이미지가 없을 때
+              <div
+                key={`${signer.email}-${idx}`}
+                style={{
+                  position: "absolute",
+                  left: field.position.x * scale,
+                  top: field.position.y * scale,
+                  width: field.width * scale,
+                  height: field.height * scale,
+                  border: `2px dashed ${signer.color}`,
+                  backgroundColor: `${signer.color}20`,
+                  borderRadius: "6px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#000",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                }}
+              >
+                {signer.name}
+              </div>
+            )
           ))
       )}
     </>
