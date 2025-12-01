@@ -236,12 +236,30 @@ const ApiService = {
 
   // 🌐 서명 저장 요청
   saveSignatures: async (documentId, signingData) => {
-    if (!documentId || !signingData) throw new Error('문서 ID와 서명자가 필요합니다.');
-    const res = await apiInstance.post(`/signature/sign`, signingData, {
-      params: { documentId }
-    });
-    return res.data;
+    if (!documentId || !signingData)
+      throw new Error("문서 ID와 서명자가 필요합니다.");
+
+    try {
+      const res = await apiInstance.post(`/signature/sign`, signingData, {
+        params: { documentId },
+      });
+      return res.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data) {
+        const { message, error: err } = error.response.data;
+        const status = error.response.status;
+
+        // 의미 있는 메시지를 가진 Error로 다시 래핑
+        throw new Error(
+          message
+            ? `(${status} ${err ?? ""}) ${message}`
+            : error.message
+        );
+      }
+      throw error;
+    }
   },
+
   // 🌐기존 서명 존재 여부 확인
   checkExistingSignature: async (signerEmail) => {
     const res = await apiInstance.get(`/signature/exists?signerEmail=${encodeURIComponent(signerEmail)}`);
