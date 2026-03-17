@@ -7,11 +7,22 @@ import ApiService from "../utils/ApiService";
 export const downloadPDF = async (documentId) => {
   try {
     // 1. 파일명 먼저 가져오기
-    const infoRes = await ApiService.fetchDocumentInfo(documentId);
-    const fileName = infoRes.data.requestName || `document_${documentId}.pdf`;
+    //const infoRes = await ApiService.fetchDocumentInfo(documentId);
+    //const fileName = infoRes.data.requestName || `document_${documentId}.pdf`;
 
     // 2. 파일 본문 다운로드
     const fileRes = await ApiService.downloadSingleDocument(documentId);
+
+    // 1. 응답 헤더에서 content-disposition 추출
+    const disposition = fileRes.headers['content-disposition'];
+    let fileName = `document_${documentId}.pdf`; // 기본값
+    console.log("Content-Disposition 헤더:", disposition);
+    if (disposition && disposition.includes('filename*=UTF-8\'\'')) {
+        // 백엔드에서 설정한 filename*=UTF-8'' 뒤의 값을 가져와 디코딩
+        const fileNameEncoded = disposition.split("filename*=UTF-8''")[1];
+        fileName = decodeURIComponent(fileNameEncoded);
+    }
+
     const blob = new Blob([fileRes.data], { type: 'application/pdf' });
     const url = window.URL.createObjectURL(blob);
 
