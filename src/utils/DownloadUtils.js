@@ -16,7 +16,6 @@ export const downloadPDF = async (documentId) => {
     // 1. 응답 헤더에서 content-disposition 추출
     const disposition = fileRes.headers['content-disposition'];
     let fileName = `document_${documentId}.pdf`; // 기본값
-    console.log("Content-Disposition 헤더:", disposition);
     if (disposition && disposition.includes('filename*=UTF-8\'\'')) {
         // 백엔드에서 설정한 filename*=UTF-8'' 뒤의 값을 가져와 디코딩
         const fileNameEncoded = disposition.split("filename*=UTF-8''")[1];
