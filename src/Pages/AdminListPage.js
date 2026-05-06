@@ -35,15 +35,17 @@ const AdminDocuments = () => {
     const [sortKey, setSortKey] = useState(localStorage.getItem("admin_sortKey") || "createdAt");
     const [sortOrder, setSortOrder] = useState(localStorage.getItem("admin_sortOrder") || "desc");
     const [statusFilter, setStatusFilter] = useState(localStorage.getItem("admin_statusFilter") || 'all');
+    const [yearFilter, setYearFilter] = useState(localStorage.getItem("admin_yearFilter") || 'all');
     // const currentMonth = `${new Date().getMonth() + 1}월`;
     const [monthFilter, setMonthFilter] = useState(localStorage.getItem("admin_monthFilter") || 'all');
 
     useEffect(() => {
+        localStorage.setItem("admin_yearFilter", yearFilter);
         localStorage.setItem("admin_monthFilter", monthFilter);
         localStorage.setItem("admin_statusFilter", statusFilter);
         localStorage.setItem("admin_sortKey", sortKey);
         localStorage.setItem("admin_sortOrder", sortOrder);
-    }, [monthFilter, statusFilter, searchQuery, sortKey, sortOrder]);
+    }, [yearFilter, monthFilter, statusFilter, searchQuery, sortKey, sortOrder]);
 
 
     useEffect(() => {
@@ -128,8 +130,24 @@ const AdminDocuments = () => {
         setCurrentPage(1);
     };
 
+    const yearOptions = Array.from(
+        new Set(
+            documents.flatMap((doc) => {
+                const candidates = [doc.createdAt, doc.updatedAt, doc.expiredAt];
+                return candidates
+                    .map((value) => moment(value))
+                    .filter((date) => date.isValid())
+                    .map((date) => date.format("YYYY"));
+            })
+        )
+    ).sort((a, b) => Number(b) - Number(a));
+
     const filteredDocuments = documents
         .filter(doc => doc.requestName.toLowerCase().includes(searchQuery.toLowerCase()))
+        .filter((doc) => {
+            if (yearFilter === "all") return true;
+            return moment(doc.createdAt).format("YYYY") === yearFilter;
+        })
         .filter((doc) => {
             if (statusFilter === "all") return true;
             if (statusFilter === "rejected") return doc.status === 2 || doc.status === 6;
@@ -237,7 +255,6 @@ const AdminDocuments = () => {
 
     const [signers, setSigners] = useState([]);
     const [showSignersModal, setShowSignersModal] = useState(false);
-    const [signerCounts, setSignerCounts] = useState({});
 
     const handleSearchClick = (docId) => {
         ApiService.fetchSignersByDocument(docId)
@@ -249,32 +266,6 @@ const AdminDocuments = () => {
                 alert("서명자 정보를 불러오는데 실패했습니다.");
             });
     };
-
-    useEffect(() => {
-        ApiService.fetchDocuments("admin")
-            .then(async (response) => {
-                const filteredDocuments = response.data.filter(doc => doc.status !== 5);
-                setDocuments(filteredDocuments);
-
-                const counts = {};
-                await Promise.all(filteredDocuments.map(async (doc) => {
-                    try {
-                        const response = await ApiService.fetchSignersByDocument(doc.id);
-                        const total = response.length;
-                        const signed = response.filter(s => s.status === 1).length;
-                        counts[doc.id] = `${signed}/${total}`;
-                    } catch (e) {
-                        counts[doc.id] = "0/0";
-                    }
-                }));
-
-                setSignerCounts(counts);
-            })
-            .catch((error) => {
-                console.error("문서 불러오기 오류:", error);
-                setError("문서를 불러오는 중 문제가 발생했습니다: " + error.message);
-            });
-    }, []);
 
     const [openDropdownId, setOpenDropdownId] = useState(null); // 추가
 
@@ -371,6 +362,26 @@ const AdminDocuments = () => {
                         <option value="4">만료</option>
                         <option value="7">검토중</option>
                         <option value="8">작성자 서명중</option>
+                    </select>
+
+                    <select
+                        value={yearFilter}
+                        onChange={(e) => setYearFilter(e.target.value)}
+                        style={{
+                            padding: "4px 8px",
+                            border: "none",
+                            background: "transparent",
+                            outline: "none",
+                            fontSize: "14px",
+                            minWidth: "80px",
+                            height: "32px",
+                            cursor: "pointer",
+                        }}
+                    >
+                        <option value="all">년도</option>
+                        {yearOptions.map((year) => (
+                            <option key={year} value={year}>{year}년</option>
+                        ))}
                     </select>
 
                     <select
@@ -544,7 +555,7 @@ const AdminDocuments = () => {
                                             fontSize: "13px"
                                         }}
                                     >
-                                        {signerCounts[doc.id] || ""}
+                                        서명자 정보
                                     </button>
 
                                 </div>
