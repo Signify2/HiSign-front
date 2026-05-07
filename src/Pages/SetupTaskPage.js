@@ -35,6 +35,7 @@ const SetupTaskPage = () => {
   const [password, setPassword] = useState("");
   const [passwordMatch, setPasswordMatch] = useState(false);
   const navigate = useNavigate();
+  const [docType, setDocType] = useState("worklog");
 
   // 현재 날짜 기준 값
   const now = new Date();
@@ -50,25 +51,30 @@ const SetupTaskPage = () => {
     () => Array.from({ length: 6 }, (_, i) => String(thisYear - i)),
     [thisYear]
   );
-  
+
   useEffect(() => {
     if (document) {
       setSelectedSubject(document.selectedSubject || "");
       setRequestName(document.requestName || "");
       setDescription(document.description || "");
       setIsRejectable(document.isRejectable ?? 0);
-  
+
       if (document.expirationDateTime) {
         const [datePart, timePart] = document.expirationDateTime.split("T");
         setExpirationDate(datePart);
         setExpirationTime(timePart?.slice(0, 5) || "23:59");
       }
     }
-
-    ApiService.getSubjects()
-    .then((subjects) => setSubjectList(subjects))
-    .catch(() => alert("과목 목록을 불러오지 못했습니다."));
   }, []);
+
+  useEffect(() => {
+    ApiService.getSubjects(docType)
+      .then((subjects) => {
+        setSubjectList(subjects);
+        setSelectedSubject("");
+      })
+      .catch(() => alert("과목 목록을 불러오지 못했습니다."));
+  }, [docType]);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -117,7 +123,7 @@ const SetupTaskPage = () => {
         return;
       }
     }
-  
+
     if (taskType === "basicTask") {
       if (!requestName.trim()) {
         alert("작업명을 입력해 주세요.");
@@ -136,13 +142,13 @@ const SetupTaskPage = () => {
         alert("유효한 인증 비밀번호를 입력해 주세요. (숫자 5자리)");
         return;
       }
-      
+
       if (!passwordMatch) {
         alert("비밀번호가 일치하지 않습니다.");
         return;
       }
     }
-  
+
     const now = new Date();
     let expiration = new Date();
 
@@ -179,7 +185,7 @@ const SetupTaskPage = () => {
       selectedSubject,
       selectedMonth,
     }));
-  
+
     navigate(`/request`);
   };
 
@@ -197,7 +203,7 @@ const SetupTaskPage = () => {
     });
     navigate(`/request-document`);
     }
-  }; 
+  };
 
   return (
     <OptimizedContainer>
@@ -208,7 +214,7 @@ const SetupTaskPage = () => {
             <Title>작업 정보 입력</Title>
             <RequiredNotice>* 항목은 필수 입력란입니다.</RequiredNotice>
           </PageHeader>
-          
+
           <FormSection>
             <TaskTypeSelector>
               <RadioGroup
@@ -237,14 +243,37 @@ const SetupTaskPage = () => {
                   <FormCard>
                     <CardTitle>TA 근무일지 정보</CardTitle>
                     <FormRow>
-                      <Label>
-                        과목명 <RequiredMark>*</RequiredMark>
-                      </Label>
+                      <Label>문서 종류 <RequiredMark>*</RequiredMark></Label>
+                      <RadioContainer>
+                        <RadioLabel>
+                          <RadioInput
+                            type="radio"
+                            name="docType"
+                            value="worklog"
+                            checked={docType === "worklog"}
+                            onChange={() => setDocType("worklog")}
+                          />
+                          근무일지
+                        </RadioLabel>
+                        <RadioLabel>
+                          <RadioInput
+                            type="radio"
+                            name="docType"
+                            value="research"
+                            checked={docType === "research"}
+                            onChange={() => setDocType("research")}
+                          />
+                          연구참여확약서
+                        </RadioLabel>
+                      </RadioContainer>
+                    </FormRow>
+                    <FormRow>
+                      <Label>과제명 <RequiredMark>*</RequiredMark></Label>
                       <Select
                         value={selectedSubject}
                         onChange={(e) => setSelectedSubject(e.target.value)}
                       >
-                        <option value="">과목을 선택하세요.</option>
+                        <option value="">과제을 선택하세요.</option>
                         {subjectList.map((subject, index) => (
                           <option key={index} value={subject}>{subject}</option>
                         ))}
