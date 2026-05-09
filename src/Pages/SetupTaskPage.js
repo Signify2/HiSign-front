@@ -226,12 +226,12 @@ const SetupTaskPage = () => {
                 <FormControlLabel
                   value="taTask"
                   control={<Radio />}
-                  label={<span style={{ fontSize: "14px" }}>TA 근무일지 작업</span>}
+                  label={<span style={{ fontSize: "14px" }}>승인 요청 작업</span>}
                 />
                 <FormControlLabel
                   value="basicTask"
                   control={<Radio />}
-                  label={<span style={{ fontSize: "14px" }}>기본 작업</span>}
+                  label={<span style={{ fontSize: "14px" }}>직접 입력</span>}
                 />
               </RadioGroup>
             </TaskTypeSelector>
@@ -241,7 +241,7 @@ const SetupTaskPage = () => {
                 {taskType === "taTask" && (
                   <>
                   <FormCard>
-                    <CardTitle>TA 근무일지 정보</CardTitle>
+                    <CardTitle>서명 작업 정보</CardTitle>
                     <FormRow>
                       <Label>문서 종류 <RequiredMark>*</RequiredMark></Label>
                       <RadioContainer>
@@ -253,7 +253,7 @@ const SetupTaskPage = () => {
                             checked={docType === "worklog"}
                             onChange={() => setDocType("worklog")}
                           />
-                          근무일지
+                          TA 근무일지
                         </RadioLabel>
                         <RadioLabel>
                           <RadioInput
@@ -268,21 +268,29 @@ const SetupTaskPage = () => {
                       </RadioContainer>
                     </FormRow>
                     <FormRow>
-                      <Label>과제명 <RequiredMark>*</RequiredMark></Label>
+                      <Label>
+                        {/* docType이 'worklog'(근무일지)일 때는 '과목명', 아니면 '과제명' 출력 */}
+                        {docType === "worklog" ? "과목명" : "과제명"}
+                        <RequiredMark>*</RequiredMark>
+                      </Label>
                       <Select
                         value={selectedSubject}
                         onChange={(e) => setSelectedSubject(e.target.value)}
                       >
-                        <option value="">과제을 선택하세요.</option>
+                        <option value="">
+                          {docType === "worklog" ? "과목을 선택하세요." : "과제를 선택하세요."}
+                        </option>
                         {subjectList.map((subject, index) => (
-                          <option key={index} value={subject}>{subject}</option>
+                            <option key={index} value={subject}>
+                              {subject}
+                            </option>
                         ))}
                       </Select>
                     </FormRow>
                     <div style={{display: "flex", gap: "10px"}}>
                       <FormRow>
                         <Label>
-                          근무년도 <RequiredMark>*</RequiredMark>
+                          제출년도 <RequiredMark>*</RequiredMark>
                         </Label>
                         <Select
                           value={selectedYear}
@@ -295,7 +303,7 @@ const SetupTaskPage = () => {
                       </FormRow>
                       <FormRow>
                         <Label>
-                          근무 월 <RequiredMark>*</RequiredMark>
+                          제출 월 <RequiredMark>*</RequiredMark>
                         </Label>
                         <Select
                           value={selectedMonth}
@@ -308,18 +316,14 @@ const SetupTaskPage = () => {
                       </FormRow>
                     </div>
                   </FormCard>
-                  <FormCard>
-                    <CardTitle>TA 근무일지 작성 안내</CardTitle>
-                    <Typography variant="body2" gutterBottom>• 본인 수업시간 및 주말 또는 휴일 제외하여 근무일지 작성</Typography>
-                    <Typography variant="body2" gutterBottom>• 늦은밤이나 새벽시간 근무일시에서 제외하여 기재해야함</Typography>
-                    <Typography variant="body2" gutterBottom>• 시험감독, 채점, 과제체크(확인) 등 교수 본연의 업무에 해당되는 내용 작성 금지</Typography>
-                    <Typography variant="body2" gutterBottom>• 본인의 월 근로시간 확인 후 맞게 작성(초과작성 불가)</Typography>
-                  </FormCard>
                   </>
                 )}
 
                 {taskType === "basicTask" && (
                   <>
+                    <div style={{ color: 'red', fontWeight: 'bold', marginBottom: '16px' }}>
+                      🚨 'TA 근무일지' 및 '연구참여확약서' 작업은 '승인 요청 작업' 부분에서 진행해 주세요.
+                    </div>
                     <FormCard>
                       <CardTitle>작업 기본 정보</CardTitle>
                       <FormRow>
@@ -327,7 +331,7 @@ const SetupTaskPage = () => {
                           작업명 <RequiredMark>*</RequiredMark>
                         </Label>
                         <InputField
-                          placeholder="예: 2025년 1학기 팀 MT 계획서"
+                          placeholder="예: 2026년 1학기 팀 MT 계획서"
                           value={requestName}
                           onChange={(e) => setRequestName(e.target.value)}
                         />
@@ -451,7 +455,11 @@ const SetupTaskPage = () => {
               <RightColumn>
                 <FormCard>
                   <CardTitle>
-                    {taskType === "taTask" ? "근무일지 업로드" : "문서 선택"}
+                    {taskType === "taTask" ? (
+                        docType === "worklog" ? "TA 근무일지 업로드" : "연구참여확약서 업로드"
+                    ) : (
+                        "문서 선택"
+                    )}
                     <RequiredMark>*</RequiredMark>
                   </CardTitle>
                   <DocumentUploadSection>
