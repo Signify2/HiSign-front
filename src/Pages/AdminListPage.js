@@ -508,7 +508,9 @@ const AdminDocuments = () => {
                         onChange={toggleSelectAllDocs}
                         style={{transform: "scale(1.2)"}}
                     />
-                    <label style={{fontSize: "0.9rem"}}>전체 선택</label>
+                    <label style={{fontSize: "0.9rem"}}>
+                        전체 선택 ({selectedDocs.length} / {filteredDocuments.length})
+                    </label>
                 </div>
             </div>
 
