@@ -2,8 +2,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
 import SearchIcon from '@mui/icons-material/Search';
-import ViewListIcon from '@mui/icons-material/ViewList';
-import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import { Box, Button, Modal, Pagination, Typography } from "@mui/material";
 import { saveAs } from "file-saver";
 import moment from 'moment';
@@ -12,11 +10,17 @@ import { Dropdown } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useRecoilValue } from "recoil";
 import * as XLSX from "xlsx";
+import AdminListToolbar from "../components/ListPage/AdminListToolbar";
 import SubjectEditorModal from "../components/ListPage/SubjectEditorModal";
 import { PageContainer } from "../components/PageContainer";
 import { loginMemberState } from "../recoil/atom/loginMemberState";
+import { DOCUMENT_TYPE_FILTER_ALL } from "../config/documentTypes";
 import ApiService from "../utils/ApiService";
 import { downloadPDF, downloadZip } from "../utils/DownloadUtils";
+import {
+    getDocumentTypeFilterOptions,
+    matchesDocumentTypeFilter,
+} from "../utils/documentTypeUtils";
 
 const AdminDocuments = () => {
     const loginMember = useRecoilValue(loginMemberState);
@@ -35,6 +39,9 @@ const AdminDocuments = () => {
     const [sortKey, setSortKey] = useState(localStorage.getItem("admin_sortKey") || "createdAt");
     const [sortOrder, setSortOrder] = useState(localStorage.getItem("admin_sortOrder") || "desc");
     const [statusFilter, setStatusFilter] = useState(localStorage.getItem("admin_statusFilter") || 'all');
+    const [documentTypeFilter, setDocumentTypeFilter] = useState(
+        localStorage.getItem("admin_documentTypeFilter") || DOCUMENT_TYPE_FILTER_ALL
+    );
     const [yearFilter, setYearFilter] = useState(localStorage.getItem("admin_yearFilter") || 'all');
     // const currentMonth = `${new Date().getMonth() + 1}월`;
     const [monthFilter, setMonthFilter] = useState(localStorage.getItem("admin_monthFilter") || 'all');
@@ -43,9 +50,10 @@ const AdminDocuments = () => {
         localStorage.setItem("admin_yearFilter", yearFilter);
         localStorage.setItem("admin_monthFilter", monthFilter);
         localStorage.setItem("admin_statusFilter", statusFilter);
+        localStorage.setItem("admin_documentTypeFilter", documentTypeFilter);
         localStorage.setItem("admin_sortKey", sortKey);
         localStorage.setItem("admin_sortOrder", sortOrder);
-    }, [yearFilter, monthFilter, statusFilter, searchQuery, sortKey, sortOrder]);
+    }, [yearFilter, monthFilter, statusFilter, documentTypeFilter, searchQuery, sortKey, sortOrder]);
 
 
     useEffect(() => {
@@ -142,8 +150,11 @@ const AdminDocuments = () => {
         )
     ).sort((a, b) => Number(b) - Number(a));
 
+    const documentTypeFilterOptions = getDocumentTypeFilterOptions();
+
     const filteredDocuments = documents
         .filter(doc => doc.requestName.toLowerCase().includes(searchQuery.toLowerCase()))
+        .filter((doc) => matchesDocumentTypeFilter(doc.requestName, documentTypeFilter))
         .filter((doc) => {
             if (yearFilter === "all") return true;
             return moment(doc.createdAt).format("YYYY") === yearFilter;
@@ -288,214 +299,31 @@ const AdminDocuments = () => {
 
             {error && <p style={{color: "red", textAlign: "center"}}>{error}</p>}
 
-            <div style={{
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                maxWidth: "85%",
-                margin: "0 auto 10px auto",
-                padding: "0 8px",
-                gap: "8px"
-            }}>
-                <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    flex: "1 1 0"
-                }}>
-                    <select
-                        value={sortKey}
-                        onChange={(e) => setSortKey(e.target.value)}
-                        style={{
-                            padding: "4px 8px",
-                            border: "none",
-                            background: "transparent",
-                            outline: "none",
-                            fontSize: "14px",
-                            minWidth: "80px",
-                            height: "32px",
-                            cursor: "pointer",
-                        }}
-                    >
-                        <option value="createdAt">생성일</option>
-                        <option value="expiredAt">만료일</option>
-                        <option value="updatedAt">수정일</option>
-                    </select>
-
-                    <select
-                        value={sortOrder}
-                        onChange={(e) => setSortOrder(e.target.value)}
-                        style={{
-                            padding: "4px 8px",
-                            border: "none",
-                            background: "transparent",
-                            outline: "none",
-                            fontSize: "14px",
-                            minWidth: "80px",
-                            height: "32px",
-                            cursor: "pointer",
-                        }}
-                    >
-                        <option value="desc">최신순</option>
-                        <option value="asc">오래된 순</option>
-                    </select>
-
-                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-                            style={{
-                                padding: "4px 8px",
-                                border: "none",
-                                background: "transparent",
-                                outline: "none",
-                                fontSize: "14px",
-                                minWidth: "80px",
-                                height: "32px",
-                                cursor: "pointer",
-                            }}
-                    >
-                        <option value="all">문서 상태</option>
-                        <option value="0">서명중</option>
-                        <option value="1">완료</option>
-                        <option value="rejected">반려</option>
-                        <option value="3">취소</option>
-                        <option value="4">만료</option>
-                        <option value="7">검토중</option>
-                        <option value="8">작성자 서명중</option>
-                    </select>
-
-                    <select
-                        value={yearFilter}
-                        onChange={(e) => setYearFilter(e.target.value)}
-                        style={{
-                            padding: "4px 8px",
-                            border: "none",
-                            background: "transparent",
-                            outline: "none",
-                            fontSize: "14px",
-                            minWidth: "80px",
-                            height: "32px",
-                            cursor: "pointer",
-                        }}
-                    >
-                        <option value="all">년도</option>
-                        {yearOptions.map((year) => (
-                            <option key={year} value={year}>{year}년</option>
-                        ))}
-                    </select>
-
-                    <select
-                        value={monthFilter}
-                        onChange={(e) => setMonthFilter(e.target.value)}
-                        style={{
-                            padding: "4px 8px",
-                            border: "none",
-                            background: "transparent",
-                            outline: "none",
-                            fontSize: "14px",
-                            minWidth: "80px",
-                            height: "32px",
-                            cursor: "pointer",
-                        }}
-                    >
-                        <option value="all">월</option>
-                        <option value="1월">1월</option>
-                        <option value="2월">2월</option>
-                        <option value="3월">3월</option>
-                        <option value="4월">4월</option>
-                        <option value="5월">5월</option>
-                        <option value="6월">6월</option>
-                        <option value="7월">7월</option>
-                        <option value="8월">8월</option>
-                        <option value="9월">9월</option>
-                        <option value="10월">10월</option>
-                        <option value="11월">11월</option>
-                        <option value="12월">12월</option>
-                    </select>
-
-                </div>
-                
-                <button
-                    onClick={() => setShowSubjectEditor(true)}
-                    style={{
-                        padding: "6px 10px",
-                        backgroundColor: "#007bff",
-                        color: "#fff",
-                        borderRadius: "4px",
-                        border: "none",
-                        fontSize: "13px",
-                        cursor:"pointer",
-                        marginLeft: "3px"
-                    }}
-                >
-                    과목 목록 수정
-                </button>
-
-                <button
-                    onClick={handleTaExcelDownload}
-                    disabled={monthFilter === "all"}
-                    style={{
-                        padding: "6px 10px",
-                        backgroundColor: monthFilter === "all" ? "#ccc" : "#ffc107",
-                        color: "#fff",
-                        borderRadius: "4px",
-                        border: "none",
-                        fontSize: "13px",
-                        cursor: monthFilter === "all" ? "not-allowed" : "pointer"
-                    }}
-                >
-                    제출 현황 다운로드
-                </button>
-
-
-                <button
-                    onClick={handleExcelDownload}
-                    disabled={!isDownloadable}
-                    style={{
-                        padding: "6px 10px",
-                        backgroundColor: !isDownloadable ? "#ccc" : "#28a745",
-                        color: "#fff",
-                        borderRadius: "4px",
-                        border: "none",
-                        fontSize: "13px",
-                        cursor: "pointer",
-                        marginLeft: "3px"
-                    }}
-                >
-                    엑셀 다운로드
-                </button>
-
-                <button
-                    onClick={() => downloadZip(selectedDocs.map(doc => doc.id))}
-                    disabled={!isDownloadable}
-                    style={{
-                        padding: "6px 10px",
-                        backgroundColor: !isDownloadable ? "#ccc" : "#007bff",
-                        color: "#fff",
-                        borderRadius: "4px",
-                        border: "none",
-                        fontSize: "13px",
-                        cursor: !isDownloadable ? "not-allowed" : "pointer",
-                        marginLeft: "3px"
-                    }}
-                >
-                    일괄 다운로드
-                </button>
-
-                <div style={{display: "flex", alignItems: "center", gap: "6px", flexShrink: 0}}>
-                    <input type="text" placeholder="작업명 검색" value={searchQuery} onChange={handleSearchChange}
-                           style={{padding: "0.1rem", width: "9rem"}}/>
-                    <button onClick={() => setViewMode("list")}
-                            style={{background: "none", border: "none", cursor: "pointer"}}>
-                        <ViewListIcon color={viewMode === "list" ? "primary" : "disabled"}/>
-                    </button>
-                    <button onClick={() => setViewMode("grid")}
-                            style={{background: "none", border: "none", cursor: "pointer"}}>
-                        <ViewModuleIcon color={viewMode === "grid" ? "primary" : "disabled"}/>
-                    </button>
-                </div>
-            </div>
-
+            <AdminListToolbar
+                sortKey={sortKey}
+                setSortKey={setSortKey}
+                sortOrder={sortOrder}
+                setSortOrder={setSortOrder}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                documentTypeFilter={documentTypeFilter}
+                setDocumentTypeFilter={setDocumentTypeFilter}
+                documentTypeFilterOptions={documentTypeFilterOptions}
+                yearFilter={yearFilter}
+                setYearFilter={setYearFilter}
+                yearOptions={yearOptions}
+                monthFilter={monthFilter}
+                setMonthFilter={setMonthFilter}
+                searchQuery={searchQuery}
+                onSearchChange={handleSearchChange}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                isDownloadable={isDownloadable}
+                onExcelDownload={handleExcelDownload}
+                onBulkDownload={() => downloadZip(selectedDocs.map((doc) => doc.id))}
+                onTaExcelDownload={handleTaExcelDownload}
+                onOpenSubjectEditor={() => setShowSubjectEditor(true)}
+            />
             <div style={{
                 maxWidth: "85%",
                 margin: "0 auto",
