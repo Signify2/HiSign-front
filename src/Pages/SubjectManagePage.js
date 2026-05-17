@@ -29,9 +29,12 @@ const SubjectManagePage = () => {
     const [showBulk, setShowBulk]         = useState(false);
 
     // 체크박스 삭제
-    const [checkedSet, setCheckedSet]     = useState(new Set()); // 체크된 과목명 Set
+    const [checkedSet, setCheckedSet]     = useState(new Set());
 
     const textareaRef = useRef(null);
+
+    // 탭에 따라 '과목' or '과제' 용어 구분
+    const term = activeTab === 'worklog' ? '과목' : '과제';
 
     useEffect(() => {
         setIsLoading(true);
@@ -46,7 +49,7 @@ const SubjectManagePage = () => {
                 setIsLoading(false);
             })
             .catch(() => {
-                alert('과목 목록을 불러오지 못했습니다.');
+                alert('목록을 불러오지 못했습니다.');
                 setIsLoading(false);
             });
     }, [activeTab]);
@@ -55,16 +58,13 @@ const SubjectManagePage = () => {
     const setCurrentList = activeTab === 'worklog' ? setWorklogList : setResearchList;
 
     /* ── 전체 선택 상태 ── */
-    const isAllChecked  = currentList.length > 0 && checkedSet.size === currentList.length;
+    const isAllChecked    = currentList.length > 0 && checkedSet.size === currentList.length;
     const isIndeterminate = checkedSet.size > 0 && checkedSet.size < currentList.length;
 
     /* ── 전체 선택 / 해제 ── */
     const handleCheckAll = () => {
-        if (isAllChecked) {
-            setCheckedSet(new Set());
-        } else {
-            setCheckedSet(new Set(currentList));
-        }
+        if (isAllChecked) setCheckedSet(new Set());
+        else setCheckedSet(new Set(currentList));
     };
 
     /* ── 개별 체크 ── */
@@ -82,7 +82,7 @@ const SubjectManagePage = () => {
         if (checkedSet.size === 0) return;
         const names = [...checkedSet].join('\n');
         const confirmed = window.confirm(
-            `선택한 ${checkedSet.size}개 과목을 삭제할까요?\n\n${names}`
+            `선택한 ${checkedSet.size}개 ${term}을 삭제할까요?\n\n${names}`
         );
         if (!confirmed) return;
         setCurrentList(prev => prev.filter(s => !checkedSet.has(s)));
@@ -93,9 +93,12 @@ const SubjectManagePage = () => {
     /* ── 단일 추가 ── */
     const handleSingleAdd = () => {
         const trimmed = singleInput.trim();
-        if (!trimmed) return;
+        if (!trimmed) {
+            alert(`추가할 ${term}명을 입력하세요.`);
+            return;
+        }
         if (currentList.includes(trimmed)) {
-            alert('이미 존재하는 과목입니다.');
+            alert(`이미 존재하는 ${term}입니다.`);
             return;
         }
         setCurrentList(prev => [...prev, trimmed]);
@@ -152,7 +155,7 @@ const SubjectManagePage = () => {
     return (
         <Box sx={{ maxWidth: 680, margin: '40px auto', px: 3, pb: 6 }}>
             <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-                과목 목록 관리
+                {term} 목록 관리
             </Typography>
 
             {/* 탭 */}
@@ -179,7 +182,7 @@ const SubjectManagePage = () => {
                             value={singleInput}
                             onChange={e => setSingleInput(e.target.value)}
                             onKeyDown={e => { if (e.key === 'Enter') handleSingleAdd(); }}
-                            placeholder="과목명 입력 후 Enter 또는 추가 버튼"
+                            placeholder={`${term}명 입력 후 Enter 또는 추가 버튼`}
                             style={{
                                 flex: 1, height: '38px', padding: '0 12px',
                                 border: '1px solid #ddd', borderRadius: '6px',
@@ -202,15 +205,17 @@ const SubjectManagePage = () => {
                     <Collapse in={showBulk}>
                         <Box sx={{ border: '1px solid #1976d2', borderRadius: '8px', p: 2, mb: 2, backgroundColor: '#f5f9ff' }}>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                여러 과목을 한 번에 추가할 수 있어요.&nbsp;
+                                여러 {term}을 한 번에 추가할 수 있어요.&nbsp;
                                 <b>줄바꿈</b>, <b>쉼표( , )</b>, <b>세미콜론( ; )</b> 으로 구분해서 입력하세요.
                             </Typography>
                             <textarea
                                 ref={textareaRef}
                                 value={bulkInput}
                                 onChange={e => { setBulkInput(e.target.value); setBulkPreview(null); }}
-                                placeholder={`예시:\nR01_비즈플로우(김광)\nR02_노드톡스(김영식), R03_에이치이엠파마(박영춘)`}
-                                rows={5}
+                            placeholder={activeTab === 'worklog'
+                                ? `예시:\nR01_비즈플로우(김광)\nR02_노드톡스(김영식)\nR03_에이치이엠파마(박영춘)`
+                                : `예시:\n[연구참여확약서]R01_비즈플로우(김광)\n[연구참여확약서]R02_노드톡스(김영식)\n[연구참여확약서]R03_에이치이엠파마(박영춘)`
+                            }                                rows={5}
                                 style={{
                                     width: '100%', boxSizing: 'border-box',
                                     padding: '10px 12px', fontSize: '13px',
@@ -235,7 +240,7 @@ const SubjectManagePage = () => {
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.8 }}>
                                                 <CheckCircleOutlineIcon fontSize="small" color="success" />
                                                 <Typography variant="body2" fontWeight="bold" color="success.main">
-                                                    추가될 과목 ({bulkPreview.toAdd.length}개)
+                                                    추가될 {term} ({bulkPreview.toAdd.length}개)
                                                 </Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.7 }}>
@@ -262,7 +267,7 @@ const SubjectManagePage = () => {
                                     )}
                                     {bulkPreview.toAdd.length === 0 && (
                                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                            추가할 수 있는 새 과목이 없습니다.
+                                            추가할 수 있는 새 {term}이 없습니다.
                                         </Typography>
                                     )}
                                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1.5 }}>
@@ -279,7 +284,7 @@ const SubjectManagePage = () => {
                         </Box>
                     </Collapse>
 
-                    {/* ── 과목 목록 ── */}
+                    {/* ── 과목/과제 목록 ── */}
                     <Box sx={{ border: '1px solid #eee', borderRadius: '8px', mb: 2 }}>
 
                         {/* 목록 헤더: 전체선택 + 선택삭제 */}
@@ -305,7 +310,6 @@ const SubjectManagePage = () => {
                                 </Typography>
                             </Box>
 
-                            {/* 선택 삭제 버튼 */}
                             {checkedSet.size > 0 && (
                                 <Button
                                     size="small"
@@ -325,7 +329,7 @@ const SubjectManagePage = () => {
                             {currentList.length === 0 ? (
                                 <Typography variant="body2" color="text.secondary"
                                     sx={{ textAlign: 'center', py: 8 }}>
-                                    과목이 없습니다. 위에서 추가해주세요.
+                                    {term}이 없습니다. 위에서 추가해주세요.
                                 </Typography>
                             ) : (
                                 currentList.map((subject, index) => {
