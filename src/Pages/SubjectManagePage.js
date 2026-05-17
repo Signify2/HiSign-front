@@ -101,6 +101,8 @@ const SubjectManagePage = () => {
             alert(`이미 존재하는 ${term}입니다.`);
             return;
         }
+        const confirmed = window.confirm(`"${trimmed}" ${term}을 추가할까요?`);
+        if (!confirmed) return;
         setCurrentList(prev => [...prev, trimmed]);
         setSingleInput('');
     };
