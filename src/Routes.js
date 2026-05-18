@@ -18,6 +18,7 @@ import SetupTaskPage from "./Pages/SetupTaskPage";
 import SignPage from './Pages/SignPage';
 import RequireLogin from './utils/RequireLogin';
 import ManageMemberPage from './Pages/MemberManage';
+import SubjectManagePage from './Pages/SubjectManagePage';
 
 
 function MyRoutes() {
@@ -32,8 +33,8 @@ function MyRoutes() {
             <Route path="/preview" element={<PreviewTaskPage />} />
             <Route path="/sign" element={<SignPage />} />
             <Route path="/sign-complete" element={<CompleteSignPage />} />
-        
-            
+
+
             <Route path="/tasksetup" element={
                 <RequireLogin><SetupTaskPage /></RequireLogin>
             } />
@@ -66,6 +67,9 @@ function MyRoutes() {
                 } />
                 <Route path="/member-manage" element={
                     <RequireLogin><ManageMemberPage/></RequireLogin>
+                } />
+                <Route path="/subject-manage" element={
+                    <RequireLogin><SubjectManagePage /></RequireLogin>
                 } />
             </Route>
         </Routes>
