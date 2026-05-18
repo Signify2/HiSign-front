@@ -29,4 +29,7 @@ public/email_templete.html
 .vscode/
 hisign_sample_email.html
 ex.html
+
+# editor settings 
 .idea/
+.ai/
