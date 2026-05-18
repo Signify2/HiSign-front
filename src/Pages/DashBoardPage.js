@@ -74,7 +74,7 @@ function DashBoardPage() {
     };
   const steps = [
     {
-      title: "1. 작업 정보 입력",
+      title: "1. 서명 문서 등록",
       icon: <EditIcon fontSize="large" />,
       desc: "진행할 작업의 유형과 세부 내용을 입력하세요.",
     },
