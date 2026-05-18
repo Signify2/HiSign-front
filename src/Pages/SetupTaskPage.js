@@ -46,9 +46,9 @@ const SetupTaskPage = () => {
   const [selectedYear, setSelectedYear] = useState(String(thisYear));
   const [selectedMonth, setSelectedMonth] = useState(`${thisMonth}월`);
 
-  // 년도 옵션: 현재년도 ~ 현재년도-5 (총 6개)
+  // 년도 옵션: 현재년도 ~ 현재년도-1 (총 2개)
   const yearOptions = useMemo(
-    () => Array.from({ length: 6 }, (_, i) => String(thisYear - i)),
+    () => Array.from({ length: 2 }, (_, i) => String(thisYear - i)),
     [thisYear]
   );
 
@@ -211,7 +211,7 @@ const SetupTaskPage = () => {
       <StyledBody>
         <OptimizedMainArea>
           <PageHeader>
-            <Title>작업 정보 입력</Title>
+            <Title>서명 문서 등록</Title>
             <RequiredNotice>* 항목은 필수 입력란입니다.</RequiredNotice>
           </PageHeader>
 
@@ -226,12 +226,12 @@ const SetupTaskPage = () => {
                 <FormControlLabel
                   value="taTask"
                   control={<Radio />}
-                  label={<span style={{ fontSize: "14px" }}>승인 요청 작업</span>}
+                  label={<span style={{ fontSize: "14px" }}>관리자 승인 문서</span>}
                 />
                 <FormControlLabel
                   value="basicTask"
                   control={<Radio />}
-                  label={<span style={{ fontSize: "14px" }}>직접 입력</span>}
+                  label={<span style={{ fontSize: "14px" }}>일반 서명 문서</span>}
                 />
               </RadioGroup>
             </TaskTypeSelector>

@@ -192,6 +192,11 @@ function Sidebar() {
                             label="[ 근무일지 관리 ] "
                         />
                         <LinkItem
+                            to="/subject-manage"
+                            active={currentPath.startsWith("/subject-manage")}
+                            label="[ 과목 목록 관리 ] "
+                        />
+                        <LinkItem
                             to="/member-manage"
                             active={currentPath.startsWith("/member-manage")}
                             label="[ 사용자 관리 ] "
@@ -332,4 +337,3 @@ const LinkItem = ({ to, active, label }) => (
 );
 
 export default Sidebar;
-

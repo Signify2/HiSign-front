@@ -2,7 +2,7 @@
 import styled from "styled-components";
 
 const StepProgressBar = ({ currentStep }) => {
-  const steps = ["작업 정보 입력", "서명자 추가", "서명 구역 할당"];
+  const steps = ["서명 문서 등록", "서명자 추가", "서명 구역 할당"];
   return (
     <BarContainer>
       {steps.map((step, index) => {
