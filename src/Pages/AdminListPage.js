@@ -32,6 +32,7 @@ const AdminDocuments = () => {
     const [viewMode, setViewMode] = useState("list");
     const [selectedDocs, setSelectedDocs] = useState([]);
     const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 1024);
+    const [showSubjectEditor, setShowSubjectEditor] = useState(false);
 
     // 필터 및 검색 관련 const
     const [searchQuery, setSearchQuery] = useState(localStorage.getItem("admin_searchQuery") || "");
@@ -677,6 +678,7 @@ const AdminDocuments = () => {
                                 page={currentPage} onChange={handlePageChange} style={{marginBottom: "1rem"}}/>
                 </div>
             )}
+            <SubjectEditorModal open={showSubjectEditor} onClose={() => setShowSubjectEditor(false)} />
         </PageContainer>
     );
 };
@@ -694,3 +696,5 @@ const iconButtonStyle = {
     whiteSpace: "nowrap",
     transition: "background-color 0.2s",
 };
+
+
