@@ -16,17 +16,6 @@ function Sidebar() {
     const handleProfileClick = () => setShowLogout((prev) => !prev);
     const handleToggleSidebar = () => setSidebarOpen((prev) => !prev);
 
-    const handleClickOutside = (e) => {
-        if (
-            isMobile &&
-            sidebarOpen &&
-            !e.target.closest(".sidebar") &&
-            !e.target.closest(".toggle-btn")
-        ) {
-            setSidebarOpen(false);
-        }
-    };
-
     const fullName = loginMember.name || "";
     const firstChar = fullName.charAt(0);
     const isAdmin = loginMember.role === "ROLE_ADMIN";
@@ -37,6 +26,17 @@ function Sidebar() {
             setIsMobile(mobile);
             if (!mobile) setSidebarOpen(true);
             else setSidebarOpen(false);
+        };
+
+        const handleClickOutside = (e) => {
+            if (
+                isMobile &&
+                sidebarOpen &&
+                !e.target.closest(".sidebar") &&
+                !e.target.closest(".toggle-btn")
+            ) {
+                setSidebarOpen(false);
+            }
         };
 
         window.addEventListener("resize", handleResize);

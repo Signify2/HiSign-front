@@ -31,7 +31,7 @@ const AdminDocuments = () => {
     const [itemsPerPage] = useState(10);
     const [viewMode, setViewMode] = useState("list");
     const [selectedDocs, setSelectedDocs] = useState([]);
-    const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 1024);
+    const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 1200);
     const [showSubjectEditor, setShowSubjectEditor] = useState(false);
 
     // 필터 및 검색 관련 const
@@ -443,7 +443,7 @@ const AdminDocuments = () => {
                                         검토
                                     </button>
                                 </div>
-                                {window.innerWidth <= 1200 ? (
+                                {isMobileView ? (
                                     <Dropdown>
                                         <Dropdown.Toggle
                                             variant="dark"
