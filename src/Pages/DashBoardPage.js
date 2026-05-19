@@ -287,25 +287,6 @@ const StepDesc = styled.p`
   margin: 4px 0 0;
 `;
 
-const InquirySection = styled.div`
-  text-align: center;
-  margin-top: 40px;
-`;
-
-const InquiryButton = styled.button`
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  margin-top: 10px;
-  &:hover {
-    background-color: #115293;
-  }
-`;
-
 const FloatingCenterLink = styled(Link)`
   position: fixed;
   bottom: 20px;
