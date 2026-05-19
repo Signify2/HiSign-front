@@ -21,18 +21,11 @@ const wrapRowSx = {
     rowGap: 1,
 };
 
-const toolbarGridRowSx = {
-    display: "grid",
-    gridTemplateColumns: { xs: "1fr", md: "1fr auto" },
-    gap: 1,
-    alignItems: "center",
-};
-
 const filterSelectStyle = {
-    padding: "6px 28px 6px 12px",
+    padding: "6px 32px 6px 12px",
     border: "1px solid #e2e8f0",
     borderRadius: "8px",
-    background: "#fff",
+    background: "#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\") no-repeat right 10px center",
     fontSize: "13px",
     minWidth: `${FILTER_CONTROL_MIN_WIDTH}px`,
     height: `${CONTROL_HEIGHT}px`,
@@ -40,19 +33,9 @@ const filterSelectStyle = {
     cursor: "pointer",
     color: "#334155",
     outline: "none",
-};
-
-const actionButtonSx = {
-    textTransform: "none",
-    fontWeight: 600,
-    fontSize: "13px",
-    borderRadius: 1.5,
-    boxShadow: "none",
-    minHeight: CONTROL_HEIGHT,
-    height: CONTROL_HEIGHT,
-    py: 0,
-    whiteSpace: "nowrap",
-    flexShrink: 0,
+    appearance: "none",
+    WebkitAppearance: "none",
+    MozAppearance: "none",
 };
 
 const downloadGroupButtonSx = {
@@ -92,6 +75,63 @@ const DownloadGroupDivider = () => (
     />
 );
 
+const FilterSelect = ({ value, onChange, children }) => (
+    <Box sx={{ position: "relative", display: "inline-flex" }}>
+        <select value={value} onChange={onChange} style={filterSelectStyle}>
+            {children}
+        </select>
+    </Box>
+);
+
+const ViewModeToggle = ({ viewMode, setViewMode }) => (
+    <Box
+        sx={{
+            display: "flex",
+            flexShrink: 0,
+            height: CONTROL_HEIGHT,
+            border: "1px solid #e2e8f0",
+            borderRadius: 2,
+            overflow: "hidden",
+            bgcolor: "#fff",
+        }}
+    >
+        <IconButton
+            size="small"
+            onClick={() => setViewMode("list")}
+            aria-label="목록 보기"
+            sx={{
+                borderRadius: 0,
+                width: CONTROL_HEIGHT,
+                height: CONTROL_HEIGHT,
+                bgcolor: viewMode === "list" ? "primary.main" : "transparent",
+                color: viewMode === "list" ? "#fff" : "text.secondary",
+                "&:hover": {
+                    bgcolor: viewMode === "list" ? "primary.dark" : "action.hover",
+                },
+            }}
+        >
+            <ViewListIcon fontSize="small" />
+        </IconButton>
+        <IconButton
+            size="small"
+            onClick={() => setViewMode("grid")}
+            aria-label="그리드 보기"
+            sx={{
+                borderRadius: 0,
+                width: CONTROL_HEIGHT,
+                height: CONTROL_HEIGHT,
+                bgcolor: viewMode === "grid" ? "primary.main" : "transparent",
+                color: viewMode === "grid" ? "#fff" : "text.secondary",
+                "&:hover": {
+                    bgcolor: viewMode === "grid" ? "primary.dark" : "action.hover",
+                },
+            }}
+        >
+            <ViewModuleIcon fontSize="small" />
+        </IconButton>
+    </Box>
+);
+
 const AdminListToolbar = ({
     sortKey,
     setSortKey,
@@ -115,24 +155,38 @@ const AdminListToolbar = ({
     onExcelDownload,
     onBulkDownload,
     onTaExcelDownload,
-    onOpenSubjectEditor,
 }) => (
     <Box
         sx={{
             maxWidth: "85%",
+            width: "100%",
             mx: "auto",
             mb: 2,
-            px: 1,
-            p: 1.5,
+            px: 2,
+            py: 1.5,
             borderRadius: 2,
-            bgcolor: "#f8fafc",
+            bgcolor: "#fff",
             border: "1px solid #e8ecf1",
             display: "flex",
             flexDirection: "column",
-            gap: 1.25,
+            gap: 0,
+            boxSizing: "border-box",
+            overflow: "hidden",
         }}
     >
-        <Box sx={toolbarGridRowSx}>
+        {/* 상단: 다운로드(왼쪽) | 작업명 검색(오른쪽) */}
+        <Box
+            sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                gap: 1.5,
+                pb: 1.5,
+                minWidth: 0,
+                width: "100%",
+            }}
+        >
             <Box
                 sx={{
                     display: "flex",
@@ -142,10 +196,9 @@ const AdminListToolbar = ({
                     bgcolor: "#eef1f5",
                     border: "1px solid #e2e8f0",
                     overflowX: "auto",
-                    width: "fit-content",
                     maxWidth: "100%",
-                    flexShrink: 0,
-                    pb: { xs: 0.25, md: 0 },
+                    flex: "0 1 auto",
+                    minWidth: 0,
                 }}
             >
                 <Button
@@ -208,16 +261,17 @@ const AdminListToolbar = ({
 
             <Box
                 sx={{
-                    ...wrapRowSx,
-                    flex: "1 1 240px",
-                    minWidth: { xs: "100%", md: 260 },
-                    maxWidth: { md: 420 },
-                    justifyContent: { xs: "stretch", md: "flex-end" },
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    flex: "0 0 auto",
+                    minWidth: 0,
+                    maxWidth: "100%",
+                    ml: "auto",
                 }}
             >
                 <TextField
                     size="small"
-                    fullWidth
                     placeholder="작업명 검색"
                     value={searchQuery}
                     onChange={onSearchChange}
@@ -229,8 +283,10 @@ const AdminListToolbar = ({
                         ),
                     }}
                     sx={{
-                        flex: "1 1 160px",
-                        minWidth: 160,
+                        flex: "0 0 auto",
+                        width: { xs: "100%", sm: 180, md: 200 },
+                        maxWidth: { xs: "100%", sm: 200, md: 220 },
+                        minWidth: { xs: 0, sm: 140 },
                         "& .MuiOutlinedInput-root": {
                             height: CONTROL_HEIGHT,
                             borderRadius: 2,
@@ -245,88 +301,50 @@ const AdminListToolbar = ({
                         },
                     }}
                 />
-                <Box
-                    sx={{
-                        display: "flex",
-                        flexShrink: 0,
-                        height: CONTROL_HEIGHT,
-                        border: "1px solid #e2e8f0",
-                        borderRadius: 2,
-                        overflow: "hidden",
-                        bgcolor: "#fff",
-                    }}
-                >
-                    <IconButton
-                        size="small"
-                        onClick={() => setViewMode("list")}
-                        aria-label="목록 보기"
-                        sx={{
-                            borderRadius: 0,
-                            width: CONTROL_HEIGHT,
-                            height: CONTROL_HEIGHT,
-                            bgcolor: viewMode === "list" ? "primary.main" : "transparent",
-                            color: viewMode === "list" ? "#fff" : "text.secondary",
-                            "&:hover": {
-                                bgcolor: viewMode === "list" ? "primary.dark" : "action.hover",
-                            },
-                        }}
-                    >
-                        <ViewListIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                        size="small"
-                        onClick={() => setViewMode("grid")}
-                        aria-label="그리드 보기"
-                        sx={{
-                            borderRadius: 0,
-                            width: CONTROL_HEIGHT,
-                            height: CONTROL_HEIGHT,
-                            bgcolor: viewMode === "grid" ? "primary.main" : "transparent",
-                            color: viewMode === "grid" ? "#fff" : "text.secondary",
-                            "&:hover": {
-                                bgcolor: viewMode === "grid" ? "primary.dark" : "action.hover",
-                            },
-                        }}
-                    >
-                        <ViewModuleIcon fontSize="small" />
-                    </IconButton>
-                </Box>
             </Box>
         </Box>
 
+        {/* 하단: 필터 드롭다운 + 보기 전환(오른쪽) */}
         <Box
             sx={{
-                ...toolbarGridRowSx,
-                pt: 1.25,
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: 1,
+                rowGap: 1,
+                pt: 1.5,
                 borderTop: "1px solid #e8ecf1",
+                width: "100%",
+                minWidth: 0,
             }}
         >
-            <Box sx={wrapRowSx}>
-                <select
+            <Box sx={{ ...wrapRowSx, flex: "1 1 auto", minWidth: 0 }}>
+                <FilterSelect
                     value={documentTypeFilter}
                     onChange={(e) => setDocumentTypeFilter(e.target.value)}
-                    style={filterSelectStyle}
                 >
                     {documentTypeFilterOptions.map(({ value, label }) => (
-                        <option key={value} value={value}>{label}</option>
+                        <option key={value} value={value}>
+                            {label}
+                        </option>
                     ))}
-                </select>
+                </FilterSelect>
 
-                <select
+                <FilterSelect
                     value={yearFilter}
                     onChange={(e) => setYearFilter(e.target.value)}
-                    style={filterSelectStyle}
                 >
                     <option value="all">년도</option>
                     {yearOptions.map((year) => (
-                        <option key={year} value={year}>{year}년</option>
+                        <option key={year} value={year}>
+                            {year}년
+                        </option>
                     ))}
-                </select>
+                </FilterSelect>
 
-                <select
+                <FilterSelect
                     value={monthFilter}
                     onChange={(e) => setMonthFilter(e.target.value)}
-                    style={filterSelectStyle}
                 >
                     <option value="all">월</option>
                     <option value="1월">1월</option>
@@ -341,12 +359,11 @@ const AdminListToolbar = ({
                     <option value="10월">10월</option>
                     <option value="11월">11월</option>
                     <option value="12월">12월</option>
-                </select>
+                </FilterSelect>
 
-                <select
+                <FilterSelect
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    style={filterSelectStyle}
                 >
                     <option value="all">문서 상태</option>
                     <option value="0">서명중</option>
@@ -356,44 +373,28 @@ const AdminListToolbar = ({
                     <option value="4">만료</option>
                     <option value="7">검토중</option>
                     <option value="8">작성자 서명중</option>
-                </select>
+                </FilterSelect>
 
-                <select
+                <FilterSelect
                     value={sortKey}
                     onChange={(e) => setSortKey(e.target.value)}
-                    style={filterSelectStyle}
                 >
                     <option value="createdAt">생성일</option>
                     <option value="expiredAt">만료일</option>
                     <option value="updatedAt">수정일</option>
-                </select>
+                </FilterSelect>
 
-                <select
+                <FilterSelect
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value)}
-                    style={filterSelectStyle}
                 >
                     <option value="desc">최신순</option>
                     <option value="asc">오래된 순</option>
-                </select>
+                </FilterSelect>
             </Box>
-
-            <Button
-                size="small"
-                variant="outlined"
-                onClick={onOpenSubjectEditor}
-                sx={{
-                    ...actionButtonSx,
-                    ml: { xs: 0, sm: "auto" },
-                    width: { xs: "100%", sm: "auto" },
-                    alignSelf: { xs: "stretch", sm: "center" },
-                    borderColor: "#cbd5e1",
-                    color: "#334155",
-                    bgcolor: "#fff",
-                }}
-            >
-                과목 목록 수정
-            </Button>
+            <Box sx={{ flexShrink: 0, ml: "auto" }}>
+                <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />
+            </Box>
         </Box>
     </Box>
 );

@@ -1,4 +1,3 @@
-import { Typography } from "@mui/material";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
@@ -26,8 +25,6 @@ const SetupTaskPage = () => {
   const [isRejectable, setIsRejectable] = useState(0);
   const [expirationDate, setExpirationDate] = useState("");
   const [expirationTime, setExpirationTime] = useState("23:59");
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [numPages, setNumPages] = useState(null);
   const [expirationOption, setExpirationOption] = useState("custom");
   const [taskType, setTaskType] = useState("taTask");
   const [selectedSubject, setSelectedSubject] = useState("");
@@ -65,7 +62,7 @@ const SetupTaskPage = () => {
         setExpirationTime(timePart?.slice(0, 5) || "23:59");
       }
     }
-  }, []);
+  }, [document]);
 
   useEffect(() => {
     ApiService.getSubjects(docType)
@@ -103,7 +100,6 @@ const SetupTaskPage = () => {
   const handlePostFiles = (file) => {
     if (!file) return alert("파일을 선택해주세요.");
     const blobUrl = URL.createObjectURL(file);
-    setPreviewUrl(blobUrl);
     setTaskState((prev) => ({
       ...prev,
       ownerId: member.uniqueId,
@@ -473,10 +469,7 @@ const SetupTaskPage = () => {
                     ) : (
                       <SelectedFileBox>
                         {document.fileUrl && (
-                          <Document
-                            file={document.fileUrl}
-                            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                          >
+                          <Document file={document.fileUrl}>
                             <Page pageNumber={1} width={250} />
                           </Document>
                         )}
