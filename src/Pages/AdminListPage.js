@@ -11,7 +11,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useRecoilValue } from "recoil";
 import * as XLSX from "xlsx";
 import AdminListToolbar from "../components/ListPage/AdminListToolbar";
-import SubjectEditorModal from "../components/ListPage/SubjectEditorModal";
 import { PageContainer } from "../components/PageContainer";
 import { loginMemberState } from "../recoil/atom/loginMemberState";
 import { DOCUMENT_TYPE_FILTER_ALL } from "../config/documentTypes";
@@ -32,8 +31,6 @@ const AdminDocuments = () => {
     const [viewMode, setViewMode] = useState("list");
     const [selectedDocs, setSelectedDocs] = useState([]);
     const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 1200);
-    const [showSubjectEditor, setShowSubjectEditor] = useState(false);
-
     // 필터 및 검색 관련 const
     const [searchQuery, setSearchQuery] = useState(localStorage.getItem("admin_searchQuery") || "");
     const [sortKey, setSortKey] = useState(localStorage.getItem("admin_sortKey") || "createdAt");
@@ -322,7 +319,6 @@ const AdminDocuments = () => {
                 onExcelDownload={handleExcelDownload}
                 onBulkDownload={() => downloadZip(selectedDocs.map((doc) => doc.id))}
                 onTaExcelDownload={handleTaExcelDownload}
-                onOpenSubjectEditor={() => setShowSubjectEditor(true)}
             />
             <div style={{
                 maxWidth: "85%",
@@ -678,7 +674,6 @@ const AdminDocuments = () => {
                                 page={currentPage} onChange={handlePageChange} style={{marginBottom: "1rem"}}/>
                 </div>
             )}
-            <SubjectEditorModal open={showSubjectEditor} onClose={() => setShowSubjectEditor(false)} />
         </PageContainer>
     );
 };
