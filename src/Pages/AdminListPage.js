@@ -21,6 +21,14 @@ import {
     matchesDocumentTypeFilter,
 } from "../utils/documentTypeUtils";
 
+const CURRENT_YEAR = String(new Date().getFullYear());
+
+const getInitialYearFilter = () => {
+    const stored = localStorage.getItem("admin_yearFilter");
+    if (!stored || stored === "all") return CURRENT_YEAR;
+    return stored;
+};
+
 const AdminDocuments = () => {
     const loginMember = useRecoilValue(loginMemberState);
     const navigate = useNavigate();
@@ -39,7 +47,7 @@ const AdminDocuments = () => {
     const [documentTypeFilter, setDocumentTypeFilter] = useState(
         localStorage.getItem("admin_documentTypeFilter") || DOCUMENT_TYPE_FILTER_ALL
     );
-    const [yearFilter, setYearFilter] = useState(localStorage.getItem("admin_yearFilter") || 'all');
+    const [yearFilter, setYearFilter] = useState(getInitialYearFilter);
     // const currentMonth = `${new Date().getMonth() + 1}월`;
     const [monthFilter, setMonthFilter] = useState(localStorage.getItem("admin_monthFilter") || 'all');
 
@@ -52,6 +60,9 @@ const AdminDocuments = () => {
         localStorage.setItem("admin_sortOrder", sortOrder);
     }, [yearFilter, monthFilter, statusFilter, documentTypeFilter, searchQuery, sortKey, sortOrder]);
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [yearFilter, monthFilter, statusFilter, documentTypeFilter, sortKey, sortOrder, searchQuery]);
 
     useEffect(() => {
         const handleResize = () => setIsMobileView(window.innerWidth <= 1200);
@@ -132,19 +143,19 @@ const AdminDocuments = () => {
 
     const handleSearchChange = (event) => {
         setSearchQuery(event.target.value);
-        setCurrentPage(1);
     };
 
     const yearOptions = Array.from(
-        new Set(
-            documents.flatMap((doc) => {
+        new Set([
+            CURRENT_YEAR,
+            ...documents.flatMap((doc) => {
                 const candidates = [doc.createdAt, doc.updatedAt, doc.expiredAt];
                 return candidates
                     .map((value) => moment(value))
                     .filter((date) => date.isValid())
                     .map((date) => date.format("YYYY"));
-            })
-        )
+            }),
+        ])
     ).sort((a, b) => Number(b) - Number(a));
 
     const documentTypeFilterOptions = getDocumentTypeFilterOptions();
@@ -152,10 +163,7 @@ const AdminDocuments = () => {
     const filteredDocuments = documents
         .filter(doc => doc.requestName.toLowerCase().includes(searchQuery.toLowerCase()))
         .filter((doc) => matchesDocumentTypeFilter(doc.requestName, documentTypeFilter))
-        .filter((doc) => {
-            if (yearFilter === "all") return true;
-            return moment(doc.createdAt).format("YYYY") === yearFilter;
-        })
+        .filter((doc) => moment(doc.createdAt).format("YYYY") === yearFilter)
         .filter((doc) => {
             if (statusFilter === "all") return true;
             if (statusFilter === "rejected") return doc.status === 2 || doc.status === 6;

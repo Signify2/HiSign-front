@@ -372,7 +372,6 @@ const AdminListToolbar = ({
                     value={yearFilter}
                     onChange={(e) => setYearFilter(e.target.value)}
                 >
-                    <option value="all">년도</option>
                     {yearOptions.map((year) => (
                         <option key={year} value={year}>
                             {year}년
