@@ -10,7 +10,7 @@ import { Dropdown } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useRecoilValue } from "recoil";
 import * as XLSX from "xlsx";
-import AdminListToolbar from "../components/ListPage/AdminListToolbar";
+import AdminListToolbar, { AdminListDownloadButtons } from "../components/ListPage/AdminListToolbar";
 import { PageContainer } from "../components/PageContainer";
 import { loginMemberState } from "../recoil/atom/loginMemberState";
 import { DOCUMENT_TYPE_FILTER_ALL } from "../config/documentTypes";
@@ -315,26 +315,39 @@ const AdminDocuments = () => {
                 onSearchChange={handleSearchChange}
                 viewMode={viewMode}
                 setViewMode={setViewMode}
-                isDownloadable={isDownloadable}
-                onExcelDownload={handleExcelDownload}
-                onBulkDownload={() => downloadZip(selectedDocs.map((doc) => doc.id))}
-                onTaExcelDownload={handleTaExcelDownload}
             />
             <div style={{
                 maxWidth: "85%",
                 margin: "0 auto",
                 padding: "0 11px",
             }}>
-                <div style={{display: "flex", alignItems: "center", gap: "8px", paddingLeft: "15px", marginTop: "4px"}}>
-                    <input
-                        type="checkbox"
-                        checked={areAllSelected}
-                        onChange={toggleSelectAllDocs}
-                        style={{transform: "scale(1.2)"}}
+                <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "12px",
+                    width: "100%",
+                    paddingLeft: "15px",
+                    boxSizing: "border-box",
+                    marginTop: "4px",
+                }}>
+                    <div style={{display: "flex", alignItems: "center", gap: "8px"}}>
+                        <input
+                            type="checkbox"
+                            checked={areAllSelected}
+                            onChange={toggleSelectAllDocs}
+                            style={{transform: "scale(1.2)"}}
+                        />
+                        <label style={{fontSize: "0.9rem"}}>
+                            전체 선택 ({selectedDocs.length} / {filteredDocuments.length})
+                        </label>
+                    </div>
+                    <AdminListDownloadButtons
+                        isDownloadable={isDownloadable}
+                        onBulkDownload={() => downloadZip(selectedDocs.map((doc) => doc.id))}
+                        onTaExcelDownload={handleTaExcelDownload}
+                        monthFilter={monthFilter}
                     />
-                    <label style={{fontSize: "0.9rem"}}>
-                        전체 선택 ({selectedDocs.length} / {filteredDocuments.length})
-                    </label>
                 </div>
             </div>
 
