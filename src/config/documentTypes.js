@@ -12,5 +12,3 @@ export const DOCUMENT_TYPES = [
         typeValue: "RESEARCH",
     },
 ];
-
-export const DOCUMENT_TYPE_FILTER_LABEL = "문서종류";
