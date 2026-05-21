@@ -4,12 +4,12 @@ export const DOCUMENT_TYPES = [
     {
         id: "worklog",
         label: "TA 근무일지",
-        requestNameMarker: null,
+        typeValue: "WORKLOG",
     },
     {
         id: "research",
         label: "연구참여확약서",
-        requestNameMarker: "[연구참여확약서]",
+        typeValue: "RESEARCH",
     },
 ];
 

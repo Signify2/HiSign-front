@@ -3,18 +3,10 @@ import {
     DOCUMENT_TYPES,
 } from "../config/documentTypes";
 
-const researchType = DOCUMENT_TYPES.find((type) => type.id === "research");
-
-export const isResearchDocument = (requestName = "") =>
-    Boolean(researchType?.requestNameMarker) &&
-    requestName.includes(researchType.requestNameMarker);
-
-export const getDocumentTypeId = (requestName = "") =>
-    isResearchDocument(requestName) ? "research" : "worklog";
-
-export const matchesDocumentTypeFilter = (requestName, filterId) => {
+export const matchesDocumentTypeFilter = (docType, filterId) => {
     if (filterId === DOCUMENT_TYPE_FILTER_ALL) return true;
-    return getDocumentTypeId(requestName) === filterId;
+    const matched = DOCUMENT_TYPES.find((t) => t.id === filterId);
+    return matched ? docType === matched.typeValue : false;
 };
 
 export const getDocumentTypeFilterOptions = () => [

@@ -151,7 +151,7 @@ const AdminDocuments = () => {
 
     const filteredDocuments = documents
         .filter(doc => doc.requestName.toLowerCase().includes(searchQuery.toLowerCase()))
-        .filter((doc) => matchesDocumentTypeFilter(doc.requestName, documentTypeFilter))
+        .filter((doc) => matchesDocumentTypeFilter(doc.type, documentTypeFilter))
         .filter((doc) => {
             if (yearFilter === "all") return true;
             return moment(doc.createdAt).format("YYYY") === yearFilter;
