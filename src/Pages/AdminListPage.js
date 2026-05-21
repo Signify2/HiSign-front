@@ -423,35 +423,6 @@ const AdminDocuments = () => {
                                 bottom: '12px',
                                 right: '12px'
                             }}>
-                                <div style={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                    marginTop: "8px",
-                                    gap: "6px"
-                                }}>
-                                    <button
-                                        onClick={() => navigate(`/check-task/${doc.id}`)}
-                                        disabled={doc.status !== 7}
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "4px",
-                                            padding: "4px 8px",
-                                            border: "1px solid #ccc",
-                                            borderRadius: "4px",
-                                            backgroundColor: doc.status === 7 ? "#007bff" : "transparent",
-                                            color: doc.status === 7 ? "#fff" : "#aaa",
-                                            fontSize: "0.8rem",
-                                            fontWeight: "bold",
-                                            cursor: doc.status === 7 ? "pointer" : "not-allowed",
-                                            minWidth: "60px",
-                                            maxWidth: "80px"
-                                        }}
-                                    >
-                                        <SearchIcon fontSize="small"/>
-                                        검토
-                                    </button>
-                                </div>
                                 {isMobileView ? (
                                     <Dropdown>
                                         <Dropdown.Toggle
@@ -518,6 +489,23 @@ const AdminDocuments = () => {
 
                                                 <div
                                                     onClick={() => {
+                                                        if (doc.status === 7) {
+                                                            navigate(`/check-task/${doc.id}`);
+                                                            setOpenDropdownId(null);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        ...iconButtonStyle,
+                                                        color: doc.status !== 7 ? "#aaa" : "#333",
+                                                        pointerEvents: doc.status !== 7 ? "none" : "auto",
+                                                    }}
+                                                >
+                                                    <SearchIcon fontSize="small" style={{marginRight: "6px"}}/>
+                                                    검토
+                                                </div>
+
+                                                <div
+                                                    onClick={() => {
                                                         if (window.confirm("정말 이 문서를 삭제하시겠습니까?")) {
                                                             ApiService.deleteDocument(doc.id,'admin')
                                                                 .then(() => {
@@ -577,6 +565,25 @@ const AdminDocuments = () => {
                                         >
                                             <DownloadIcon fontSize="small" style={{marginRight: "6px"}}/>
                                             다운로드
+                                        </button>
+                                        <button
+                                            onClick={() => navigate(`/check-task/${doc.id}`)}
+                                            disabled={doc.status !== 7}
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                padding: "5px 10px",
+                                                border: "1px solid #ccc",
+                                                borderRadius: "5px",
+                                                backgroundColor: doc.status === 7 ? "#007bff" : "transparent",
+                                                color: doc.status === 7 ? "#fff" : "#aaa",
+                                                fontSize: "0.8rem",
+                                                fontWeight: "bold",
+                                                cursor: doc.status === 7 ? "pointer" : "not-allowed",
+                                            }}
+                                        >
+                                            <SearchIcon fontSize="small" style={{marginRight: "6px"}}/>
+                                            검토
                                         </button>
                                         <button
                                             onClick={() => {
