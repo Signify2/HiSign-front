@@ -24,7 +24,9 @@ import {
 const CURRENT_YEAR = String(new Date().getFullYear());
 const MONTH_FILTER_ALL = "all";
 const CURRENT_MONTH = String(new Date().getMonth() + 1).padStart(2, "0");
+const ITEMS_PER_PAGE = 10;
 
+// 로컬스토리지에 남아 있을 수 있는 예전 월 형식("1월", "1")도 현재 포맷("01")으로 맞춘다.
 const normalizeMonthFilter = (value, fallback = CURRENT_MONTH) => {
     if (!value) return fallback;
     if (value === MONTH_FILTER_ALL) return MONTH_FILTER_ALL;
@@ -59,11 +61,9 @@ const AdminDocuments = () => {
     const [documents, setDocuments] = useState([]);
     const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10);
     const [viewMode, setViewMode] = useState("list");
     const [selectedDocs, setSelectedDocs] = useState([]);
     const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 1200);
-    // 필터 및 검색 관련 const
     const [searchQuery, setSearchQuery] = useState(localStorage.getItem("admin_searchQuery") || "");
     const [sortKey, setSortKey] = useState(localStorage.getItem("admin_sortKey") || "createdAt");
     const [sortOrder, setSortOrder] = useState(localStorage.getItem("admin_sortOrder") || "desc");
@@ -75,15 +75,17 @@ const AdminDocuments = () => {
     const [monthFilter, setMonthFilter] = useState(getInitialMonthFilter);
 
     useEffect(() => {
+        // 필터 상태를 유지해서 페이지를 벗어났다가 돌아와도 같은 목록을 보게 한다.
         localStorage.setItem("admin_yearFilter", yearFilter);
         localStorage.setItem("admin_monthFilter", monthFilter);
         localStorage.setItem("admin_statusFilter", statusFilter);
         localStorage.setItem("admin_documentTypeFilter", documentTypeFilter);
         localStorage.setItem("admin_sortKey", sortKey);
         localStorage.setItem("admin_sortOrder", sortOrder);
-    }, [yearFilter, monthFilter, statusFilter, documentTypeFilter, searchQuery, sortKey, sortOrder]);
+    }, [yearFilter, monthFilter, statusFilter, documentTypeFilter, sortKey, sortOrder]);
 
     useEffect(() => {
+        // 조건이 바뀌면 현재 페이지가 범위를 벗어날 수 있으므로 첫 페이지로 되돌린다.
         setCurrentPage(1);
     }, [yearFilter, monthFilter, statusFilter, documentTypeFilter, sortKey, sortOrder, searchQuery]);
 
@@ -105,6 +107,7 @@ const AdminDocuments = () => {
     useEffect(() => {
         if (!loginMember || loginMember.role?.trim().toUpperCase() !== "ROLE_ADMIN") return;
 
+        // 관리자 화면에서는 삭제된 상태(status 5)를 제외한 문서만 목록에 올린다.
         ApiService.fetchDocuments("admin")
             .then((response) => {
                 const filteredDocuments = response.data.filter(doc => doc.status !== 5);
@@ -183,6 +186,7 @@ const AdminDocuments = () => {
 
     const documentTypeFilterOptions = getDocumentTypeFilterOptions();
 
+    // 화면에 보여줄 목록은 검색어, 문서 종류, 연/월, 상태, 정렬 조건을 한 번에 반영해 계산한다.
     const filteredDocuments = documents
         .filter(doc => doc.requestName.toLowerCase().includes(searchQuery.toLowerCase()))
         .filter((doc) => matchesDocumentTypeFilter(doc.requestName, documentTypeFilter))
@@ -211,6 +215,7 @@ const AdminDocuments = () => {
         });
 
     const filteredDocumentIds = new Set(filteredDocuments.map((doc) => doc.id));
+    // 선택 상태는 유지하되, 현재 필터 결과에 포함된 문서만 후속 작업 대상으로 본다.
     const selectedFilteredDocs = selectedDocs.filter((doc) => filteredDocumentIds.has(doc.id));
 
     const toggleSelectDoc = (doc) => {
@@ -251,27 +256,6 @@ const AdminDocuments = () => {
         downloadZip(downloadableDocs.map((doc) => doc.id));
     };
 
-    // 작업 정보 엑셀 저장
-    const handleExcelDownload = () => {
-        const worksheetData = selectedFilteredDocs.map(doc => ({
-            문서명: doc.requestName,
-            상태: getStatusLabel(doc.status),
-            요청생성일: moment(doc.createdAt).format("YYYY-MM-DD HH:mm"),
-            요청만료일: moment(doc.expiredAt).format("YYYY-MM-DD HH:mm"),
-            수정일: doc.updatedAt ? moment(doc.updatedAt).format("YYYY-MM-DD HH:mm") : "없음",
-            요청자: doc.requesterName || "알 수 없음"
-        }));
-
-        const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "문서 목록");
-
-        const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-        const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-        saveAs(blob, "Ta근무일지.xlsx");
-    };
-
-    // Ta 제출 현황 엑셀 다운로드
     const handleTaExcelDownload = async () => {
         if (selectedFilteredDocs.length === 0) {
             alert("선택된 문서가 없습니다.");
@@ -286,11 +270,9 @@ const AdminDocuments = () => {
             const res = await ApiService.excelTa();
             const taList = res.data;
 
-            const docsThisMonth = selectedFilteredDocs;
-
             const result = taList.reduce((rows, ta) => {
-                // 현재 필터 결과 중 선택된 문서와 과목명이 일치하는 TA만 내려받는다.
-                const matchedDocs = docsThisMonth.filter(doc =>
+                // 선택된 문서 중 같은 과목의 최신 문서 상태만 제출 현황에 반영한다.
+                const matchedDocs = selectedFilteredDocs.filter(doc =>
                     doc.requestName.includes(ta.lecture)
                 );
 
@@ -333,6 +315,7 @@ const AdminDocuments = () => {
     const [signers, setSigners] = useState([]);
     const [showSignersModal, setShowSignersModal] = useState(false);
 
+    // 상세 화면으로 이동하지 않고도 서명 진행 상황을 바로 확인할 수 있게 별도 조회한다.
     const handleSearchClick = (docId) => {
         ApiService.fetchSignersByDocument(docId)
             .then((response) => {
@@ -344,7 +327,7 @@ const AdminDocuments = () => {
             });
     };
 
-    const [openDropdownId, setOpenDropdownId] = useState(null); // 추가
+    const [openDropdownId, setOpenDropdownId] = useState(null);
 
     const toggleDropdown = (id) => {
         setOpenDropdownId((prevId) => (prevId === id ? null : id));
@@ -429,7 +412,7 @@ const AdminDocuments = () => {
                     margin: "auto",
                     padding: "12px"
                 }}>
-                    {filteredDocuments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((doc) => (
+                    {filteredDocuments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((doc) => (
                         <div key={doc.id} style={{
                             border: "1px solid #ddd",
                             borderRadius: "10px",
@@ -759,7 +742,7 @@ const AdminDocuments = () => {
 
             {viewMode === "list" && (
                 <div style={{display: "flex", justifyContent: "center", marginTop: "20px"}}>
-                    <Pagination count={Math.ceil(filteredDocuments.length / itemsPerPage)} color="default"
+                    <Pagination count={Math.ceil(filteredDocuments.length / ITEMS_PER_PAGE)} color="default"
                                 page={currentPage} onChange={handlePageChange} style={{marginBottom: "1rem"}}/>
                 </div>
             )}
