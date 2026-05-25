@@ -189,7 +189,7 @@ const AdminDocuments = () => {
     // 화면에 보여줄 목록은 검색어, 문서 종류, 연/월, 상태, 정렬 조건을 한 번에 반영해 계산한다.
     const filteredDocuments = documents
         .filter(doc => doc.requestName.toLowerCase().includes(searchQuery.toLowerCase()))
-        .filter((doc) => matchesDocumentTypeFilter(doc.requestName, documentTypeFilter))
+        .filter((doc) => matchesDocumentTypeFilter(doc.type, documentTypeFilter))
         .filter((doc) => {
             const filterDate = moment(getFilterDateValue(doc, sortKey));
             return filterDate.isValid() && filterDate.format("YYYY") === yearFilter;
