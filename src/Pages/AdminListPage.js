@@ -22,12 +22,21 @@ import {
 } from "../utils/documentTypeUtils";
 
 const CURRENT_YEAR = String(new Date().getFullYear());
+const CURRENT_MONTH = `${new Date().getMonth() + 1}월`;
 
 const getInitialYearFilter = () => {
     const stored = localStorage.getItem("admin_yearFilter");
     if (!stored || stored === "all") return CURRENT_YEAR;
     return stored;
 };
+
+const getInitialMonthFilter = () => {
+    const stored = localStorage.getItem("admin_monthFilter");
+    if (!stored) return CURRENT_MONTH;
+    return stored;
+};
+
+const getFilterDateValue = (doc, sortKey) => doc?.[sortKey] ?? null;
 
 const AdminDocuments = () => {
     const loginMember = useRecoilValue(loginMemberState);
@@ -48,8 +57,7 @@ const AdminDocuments = () => {
         localStorage.getItem("admin_documentTypeFilter") || DOCUMENT_TYPE_FILTER_ALL
     );
     const [yearFilter, setYearFilter] = useState(getInitialYearFilter);
-    // const currentMonth = `${new Date().getMonth() + 1}월`;
-    const [monthFilter, setMonthFilter] = useState(localStorage.getItem("admin_monthFilter") || 'all');
+    const [monthFilter, setMonthFilter] = useState(getInitialMonthFilter);
 
     useEffect(() => {
         localStorage.setItem("admin_yearFilter", yearFilter);
@@ -163,7 +171,10 @@ const AdminDocuments = () => {
     const filteredDocuments = documents
         .filter(doc => doc.requestName.toLowerCase().includes(searchQuery.toLowerCase()))
         .filter((doc) => matchesDocumentTypeFilter(doc.requestName, documentTypeFilter))
-        .filter((doc) => moment(doc.createdAt).format("YYYY") === yearFilter)
+        .filter((doc) => {
+            const filterDate = moment(getFilterDateValue(doc, sortKey));
+            return filterDate.isValid() && filterDate.format("YYYY") === yearFilter;
+        })
         .filter((doc) => {
             if (statusFilter === "all") return true;
             if (statusFilter === "rejected") return doc.status === 2 || doc.status === 6;
@@ -171,7 +182,9 @@ const AdminDocuments = () => {
         })
         .filter((doc) => {
             if (monthFilter === "all") return true;
-            return doc.requestName.includes(monthFilter);
+            const selectedMonth = Number(monthFilter.replace("월", ""));
+            const filterDate = moment(getFilterDateValue(doc, sortKey));
+            return filterDate.isValid() && filterDate.month() + 1 === selectedMonth;
         })
 
         .sort((a, b) => {
