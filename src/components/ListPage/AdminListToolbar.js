@@ -166,10 +166,7 @@ export const AdminListDownloadButtons = ({
     isDownloadable,
     onBulkDownload,
     onTaExcelDownload,
-    monthFilter,
 }) => {
-    const isTaDownloadable = monthFilter !== "all";
-
     return (
         <Box
             sx={{
@@ -219,7 +216,7 @@ export const AdminListDownloadButtons = ({
             <Box
                 role="button"
                 tabIndex={0}
-                aria-disabled={!isTaDownloadable}
+                aria-disabled={false}
                 onClick={() => {
                     onTaExcelDownload();
                 }}

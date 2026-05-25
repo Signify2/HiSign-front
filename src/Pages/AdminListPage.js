@@ -40,8 +40,6 @@ const normalizeMonthFilter = (value, fallback = CURRENT_MONTH) => {
     return String(monthNumber).padStart(2, "0");
 };
 
-const formatMonthFilterLabel = (value) => `${Number(value)}월`;
-
 const getInitialYearFilter = () => {
     const stored = localStorage.getItem("admin_yearFilter");
     if (!stored || stored === "all") return CURRENT_YEAR;
@@ -261,11 +259,6 @@ const AdminDocuments = () => {
             alert("선택된 문서가 없습니다.");
             return;
         }
-
-        if (monthFilter === MONTH_FILTER_ALL) {
-            alert("월을 선택해주세요.");
-            return;
-        }
         try {
             const res = await ApiService.excelTa();
             const taList = res.data;
@@ -305,7 +298,7 @@ const AdminDocuments = () => {
             const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
             const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
 
-            saveAs(blob, `${formatMonthFilterLabel(monthFilter)}_TA근무현황.xlsx`);
+            saveAs(blob, "TA 근무 현황.xlsx");
         } catch (err) {
             console.error("TA 엑셀 생성 오류:", err);
             alert("TA 엑셀 다운로드 중 오류가 발생했습니다.");
@@ -398,7 +391,6 @@ const AdminDocuments = () => {
                         isDownloadable={isDownloadable}
                         onBulkDownload={handleBulkDownload}
                         onTaExcelDownload={handleTaExcelDownload}
-                        monthFilter={monthFilter}
                     />
                 </div>
             </div>
