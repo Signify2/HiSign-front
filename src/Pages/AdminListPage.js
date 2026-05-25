@@ -25,6 +25,7 @@ const CURRENT_YEAR = String(new Date().getFullYear());
 const MONTH_FILTER_ALL = "all";
 const CURRENT_MONTH = String(new Date().getMonth() + 1).padStart(2, "0");
 const ITEMS_PER_PAGE = 10;
+const SORT_KEY_WORK_DATE = "workDate";
 
 // 로컬스토리지에 남아 있을 수 있는 예전 월 형식("1월", "1")도 현재 포맷("01")으로 맞춘다.
 const normalizeMonthFilter = (value, fallback = CURRENT_MONTH) => {
@@ -51,7 +52,36 @@ const getInitialMonthFilter = () => {
     return normalizeMonthFilter(stored);
 };
 
-const getFilterDateValue = (doc, sortKey) => doc?.[sortKey] ?? null;
+const normalizeSortKey = (value) => {
+    if (value === "expiredAt" || value === "updatedAt") return value;
+    return SORT_KEY_WORK_DATE;
+};
+
+const getWorkDateMoment = (doc) => {
+    const requestName = String(doc?.requestName ?? "");
+    const matched = requestName.match(/(?:^|_)(\d{4})_(\d{1,2})월(?:_|$)/);
+
+    if (matched) {
+        const [, year, month] = matched;
+        const workDate = moment(`${year}-${month}-01`, "YYYY-M-DD", true);
+
+        if (workDate.isValid()) {
+            return workDate;
+        }
+    }
+
+    const fallbackDate = moment(doc?.createdAt);
+    return fallbackDate.isValid() ? fallbackDate : moment.invalid();
+};
+
+const getFilterDateMoment = (doc, sortKey) => {
+    if (sortKey === SORT_KEY_WORK_DATE) {
+        return getWorkDateMoment(doc);
+    }
+
+    const filterDate = moment(doc?.[sortKey]);
+    return filterDate.isValid() ? filterDate : moment.invalid();
+};
 
 const AdminDocuments = () => {
     const loginMember = useRecoilValue(loginMemberState);
@@ -63,7 +93,7 @@ const AdminDocuments = () => {
     const [selectedDocs, setSelectedDocs] = useState([]);
     const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 1200);
     const [searchQuery, setSearchQuery] = useState(localStorage.getItem("admin_searchQuery") || "");
-    const [sortKey, setSortKey] = useState(localStorage.getItem("admin_sortKey") || "createdAt");
+    const [sortKey, setSortKey] = useState(() => normalizeSortKey(localStorage.getItem("admin_sortKey")));
     const [sortOrder, setSortOrder] = useState(localStorage.getItem("admin_sortOrder") || "desc");
     const [statusFilter, setStatusFilter] = useState(localStorage.getItem("admin_statusFilter") || 'all');
     const [documentTypeFilter, setDocumentTypeFilter] = useState(
@@ -173,9 +203,13 @@ const AdminDocuments = () => {
         new Set([
             CURRENT_YEAR,
             ...documents.flatMap((doc) => {
-                const candidates = [doc.createdAt, doc.updatedAt, doc.expiredAt];
+                const candidates = [
+                    getWorkDateMoment(doc),
+                    moment(doc.updatedAt),
+                    moment(doc.expiredAt),
+                ];
+
                 return candidates
-                    .map((value) => moment(value))
                     .filter((date) => date.isValid())
                     .map((date) => date.format("YYYY"));
             }),
@@ -189,7 +223,7 @@ const AdminDocuments = () => {
         .filter(doc => doc.requestName.toLowerCase().includes(searchQuery.toLowerCase()))
         .filter((doc) => matchesDocumentTypeFilter(doc.type, documentTypeFilter))
         .filter((doc) => {
-            const filterDate = moment(getFilterDateValue(doc, sortKey));
+            const filterDate = getFilterDateMoment(doc, sortKey);
             return filterDate.isValid() && filterDate.format("YYYY") === yearFilter;
         })
         .filter((doc) => {
@@ -200,15 +234,17 @@ const AdminDocuments = () => {
         .filter((doc) => {
             if (monthFilter === MONTH_FILTER_ALL) return true;
             const selectedMonth = Number(monthFilter);
-            const filterDate = moment(getFilterDateValue(doc, sortKey));
+            const filterDate = getFilterDateMoment(doc, sortKey);
             return filterDate.isValid() && filterDate.month() + 1 === selectedMonth;
         })
 
         .sort((a, b) => {
-            const dateA = new Date(a[sortKey] ?? 0);
-            const dateB = new Date(b[sortKey] ?? 0);
+            const dateA = getFilterDateMoment(a, sortKey);
+            const dateB = getFilterDateMoment(b, sortKey);
+            const timeA = dateA.isValid() ? dateA.valueOf() : 0;
+            const timeB = dateB.isValid() ? dateB.valueOf() : 0;
 
-            const result = dateB - dateA;
+            const result = timeB - timeA;
             return sortOrder === "desc" ? result : -result;
         });
 
