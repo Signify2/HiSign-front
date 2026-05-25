@@ -41,6 +41,13 @@ const filterSelectStyle = {
 const DOWNLOAD_GROUP_BG = "#eef1f5";
 const DOWNLOAD_HOVER_BG = "#d5dce6";
 const DOWNLOAD_ACTIVE_BG = "#c5ced9";
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1;
+    return {
+        value: String(month).padStart(2, "0"),
+        label: `${month}월`,
+    };
+});
 
 const downloadSegmentSx = () => ({
     display: "inline-flex",
@@ -380,18 +387,11 @@ const AdminListToolbar = ({
                     onChange={(e) => setMonthFilter(e.target.value)}
                 >
                     <option value="all">월</option>
-                    <option value="1월">1월</option>
-                    <option value="2월">2월</option>
-                    <option value="3월">3월</option>
-                    <option value="4월">4월</option>
-                    <option value="5월">5월</option>
-                    <option value="6월">6월</option>
-                    <option value="7월">7월</option>
-                    <option value="8월">8월</option>
-                    <option value="9월">9월</option>
-                    <option value="10월">10월</option>
-                    <option value="11월">11월</option>
-                    <option value="12월">12월</option>
+                    {MONTH_OPTIONS.map(({ value, label }) => (
+                        <option key={value} value={value}>
+                            {label}
+                        </option>
+                    ))}
                 </FilterSelect>
 
                 <FilterSelect

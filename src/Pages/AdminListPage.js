@@ -22,7 +22,23 @@ import {
 } from "../utils/documentTypeUtils";
 
 const CURRENT_YEAR = String(new Date().getFullYear());
-const CURRENT_MONTH = `${new Date().getMonth() + 1}월`;
+const MONTH_FILTER_ALL = "all";
+const CURRENT_MONTH = String(new Date().getMonth() + 1).padStart(2, "0");
+
+const normalizeMonthFilter = (value, fallback = CURRENT_MONTH) => {
+    if (!value) return fallback;
+    if (value === MONTH_FILTER_ALL) return MONTH_FILTER_ALL;
+
+    const matchedMonth = String(value).trim().match(/^(\d{1,2})(?:월)?$/);
+    if (!matchedMonth) return fallback;
+
+    const monthNumber = Number(matchedMonth[1]);
+    if (monthNumber < 1 || monthNumber > 12) return fallback;
+
+    return String(monthNumber).padStart(2, "0");
+};
+
+const formatMonthFilterLabel = (value) => `${Number(value)}월`;
 
 const getInitialYearFilter = () => {
     const stored = localStorage.getItem("admin_yearFilter");
@@ -32,8 +48,7 @@ const getInitialYearFilter = () => {
 
 const getInitialMonthFilter = () => {
     const stored = localStorage.getItem("admin_monthFilter");
-    if (!stored) return CURRENT_MONTH;
-    return stored;
+    return normalizeMonthFilter(stored);
 };
 
 const getFilterDateValue = (doc, sortKey) => doc?.[sortKey] ?? null;
@@ -181,8 +196,8 @@ const AdminDocuments = () => {
             return String(doc.status) === statusFilter;
         })
         .filter((doc) => {
-            if (monthFilter === "all") return true;
-            const selectedMonth = Number(monthFilter.replace("월", ""));
+            if (monthFilter === MONTH_FILTER_ALL) return true;
+            const selectedMonth = Number(monthFilter);
             const filterDate = moment(getFilterDateValue(doc, sortKey));
             return filterDate.isValid() && filterDate.month() + 1 === selectedMonth;
         })
@@ -263,7 +278,7 @@ const AdminDocuments = () => {
             return;
         }
 
-        if (monthFilter === 'all') {
+        if (monthFilter === MONTH_FILTER_ALL) {
             alert("월을 선택해주세요.");
             return;
         }
@@ -308,7 +323,7 @@ const AdminDocuments = () => {
             const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
             const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
 
-            saveAs(blob, `${monthFilter}_TA근무현황.xlsx`);
+            saveAs(blob, `${formatMonthFilterLabel(monthFilter)}_TA근무현황.xlsx`);
         } catch (err) {
             console.error("TA 엑셀 생성 오류:", err);
             alert("TA 엑셀 다운로드 중 오류가 발생했습니다.");
