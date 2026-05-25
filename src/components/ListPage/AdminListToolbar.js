@@ -410,6 +410,7 @@ const AdminListToolbar = ({
                     onChange={(e) => setSortKey(e.target.value)}
                 >
                     <option value="workDate">근무일</option>
+                    <option value="createdAt">생성일</option>
                     <option value="expiredAt">만료일</option>
                     <option value="updatedAt">수정일</option>
                 </FilterSelect>

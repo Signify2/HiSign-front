@@ -53,7 +53,7 @@ const getInitialMonthFilter = () => {
 };
 
 const normalizeSortKey = (value) => {
-    if (value === "expiredAt" || value === "updatedAt") return value;
+    if (value === "createdAt" || value === "expiredAt" || value === "updatedAt") return value;
     return SORT_KEY_WORK_DATE;
 };
 
@@ -205,6 +205,7 @@ const AdminDocuments = () => {
             ...documents.flatMap((doc) => {
                 const candidates = [
                     getWorkDateMoment(doc),
+                    moment(doc.createdAt),
                     moment(doc.updatedAt),
                     moment(doc.expiredAt),
                 ];
