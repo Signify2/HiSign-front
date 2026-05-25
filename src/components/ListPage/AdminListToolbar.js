@@ -185,13 +185,11 @@ export const AdminListDownloadButtons = ({
                 tabIndex={0}
                 aria-disabled={!isDownloadable}
                 onClick={() => {
-                    if (!isDownloadable) return;
                     onBulkDownload();
                 }}
                 onKeyDown={(e) => {
                     if (e.key !== "Enter" && e.key !== " ") return;
                     e.preventDefault();
-                    if (!isDownloadable) return;
                     onBulkDownload();
                 }}
                 sx={{
@@ -216,13 +214,11 @@ export const AdminListDownloadButtons = ({
                 tabIndex={0}
                 aria-disabled={!isTaDownloadable}
                 onClick={() => {
-                    if (!isTaDownloadable) return;
                     onTaExcelDownload();
                 }}
                 onKeyDown={(e) => {
                     if (e.key !== "Enter" && e.key !== " ") return;
                     e.preventDefault();
-                    if (!isTaDownloadable) return;
                     onTaExcelDownload();
                 }}
                 sx={{

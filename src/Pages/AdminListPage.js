@@ -195,6 +195,9 @@ const AdminDocuments = () => {
             return sortOrder === "desc" ? result : -result;
         });
 
+    const filteredDocumentIds = new Set(filteredDocuments.map((doc) => doc.id));
+    const selectedFilteredDocs = selectedDocs.filter((doc) => filteredDocumentIds.has(doc.id));
+
     const toggleSelectDoc = (doc) => {
         setSelectedDocs(prev =>
             prev.some(d => d.id === doc.id)
@@ -203,20 +206,39 @@ const AdminDocuments = () => {
         );
     };
 
-    const areAllSelected = selectedDocs.length === filteredDocuments.length && filteredDocuments.length > 0;
+    const areAllSelected = selectedFilteredDocs.length === filteredDocuments.length && filteredDocuments.length > 0;
     const toggleSelectAllDocs = () => {
-        if (areAllSelected) {
-            setSelectedDocs([]);
-        } else {
-            setSelectedDocs(filteredDocuments);
-        }
+        setSelectedDocs((prev) => {
+            const outsideFilteredDocs = prev.filter((doc) => !filteredDocumentIds.has(doc.id));
+
+            if (areAllSelected) {
+                return outsideFilteredDocs;
+            }
+
+            return [...outsideFilteredDocs, ...filteredDocuments];
+        });
     };
 
-    const isDownloadable = selectedDocs.length > 0 && selectedDocs.every(doc => doc.status === 1);
+    const downloadableDocs = selectedFilteredDocs.filter((doc) => doc.status === 1);
+    const isDownloadable = downloadableDocs.length > 0;
+
+    const handleBulkDownload = () => {
+        if (selectedFilteredDocs.length === 0) {
+            alert("선택된 문서가 없습니다.");
+            return;
+        }
+
+        if (!isDownloadable) return;
+
+        const shouldDownload = window.confirm("서명 완료 문서만 다운로드 합니다.");
+        if (!shouldDownload) return;
+
+        downloadZip(downloadableDocs.map((doc) => doc.id));
+    };
 
     // 작업 정보 엑셀 저장
     const handleExcelDownload = () => {
-        const worksheetData = selectedDocs.map(doc => ({
+        const worksheetData = selectedFilteredDocs.map(doc => ({
             문서명: doc.requestName,
             상태: getStatusLabel(doc.status),
             요청생성일: moment(doc.createdAt).format("YYYY-MM-DD HH:mm"),
@@ -236,6 +258,11 @@ const AdminDocuments = () => {
 
     // Ta 제출 현황 엑셀 다운로드
     const handleTaExcelDownload = async () => {
+        if (selectedFilteredDocs.length === 0) {
+            alert("선택된 문서가 없습니다.");
+            return;
+        }
+
         if (monthFilter === 'all') {
             alert("월을 선택해주세요.");
             return;
@@ -244,29 +271,35 @@ const AdminDocuments = () => {
             const res = await ApiService.excelTa();
             const taList = res.data;
 
-            const docsThisMonth = filteredDocuments;
+            const docsThisMonth = selectedFilteredDocs;
 
-            const result = taList.map((ta) => {
-                // 해당 TA+강의명과 일치하는 모든 문서 찾기
+            const result = taList.reduce((rows, ta) => {
+                // 현재 필터 결과 중 선택된 문서와 과목명이 일치하는 TA만 내려받는다.
                 const matchedDocs = docsThisMonth.filter(doc =>
-                    doc.requestName.includes(ta.taName) &&
                     doc.requestName.includes(ta.lecture)
                 );
 
-                // 가장 최신 문서 선택 (createdAt 기준)
-                let latestDoc = null;
-                if (matchedDocs.length > 0) {
-                    latestDoc = matchedDocs.reduce((a, b) =>
-                        new Date(a.createdAt) > new Date(b.createdAt) ? a : b
-                    );
+                if (matchedDocs.length === 0) {
+                    return rows;
                 }
 
-                return {
+                const latestDoc = matchedDocs.reduce((a, b) =>
+                    new Date(a.createdAt) > new Date(b.createdAt) ? a : b
+                );
+
+                rows.push({
                     "TA명": ta.taName,
                     "과목명": ta.lecture,
-                    "상태": latestDoc ? getStatusLabel(latestDoc.status) : ""
-                };
-            });
+                    "상태": getStatusLabel(latestDoc.status)
+                });
+
+                return rows;
+            }, []);
+
+            if (result.length === 0) {
+                alert("선택한 문서와 일치하는 제출 현황이 없습니다.");
+                return;
+            }
 
             const worksheet = XLSX.utils.json_to_sheet(result);
             const workbook = XLSX.utils.book_new();
@@ -360,12 +393,12 @@ const AdminDocuments = () => {
                             style={{transform: "scale(1.2)"}}
                         />
                         <label style={{fontSize: "0.9rem"}}>
-                            전체 선택 ({selectedDocs.length} / {filteredDocuments.length})
+                            전체 선택 ({selectedFilteredDocs.length} / {filteredDocuments.length})
                         </label>
                     </div>
                     <AdminListDownloadButtons
                         isDownloadable={isDownloadable}
-                        onBulkDownload={() => downloadZip(selectedDocs.map((doc) => doc.id))}
+                        onBulkDownload={handleBulkDownload}
                         onTaExcelDownload={handleTaExcelDownload}
                         monthFilter={monthFilter}
                     />
