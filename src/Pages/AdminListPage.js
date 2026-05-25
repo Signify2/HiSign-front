@@ -246,7 +246,10 @@ const AdminDocuments = () => {
             return;
         }
 
-        if (!isDownloadable) return;
+        if (!isDownloadable) {
+            alert("서명이 완료된 문서를 선택해주세요.");
+            return;
+        }
 
         const shouldDownload = window.confirm("서명 완료 문서만 다운로드 합니다.");
         if (!shouldDownload) return;
