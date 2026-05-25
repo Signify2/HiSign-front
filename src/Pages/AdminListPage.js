@@ -337,8 +337,11 @@ const AdminDocuments = () => {
 
             const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
             const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+            const fileName = monthFilter === MONTH_FILTER_ALL
+                ? "TA근무현황.xlsx"
+                : `${Number(monthFilter)}월_TA근무현황.xlsx`;
 
-            saveAs(blob, "TA 근무 현황.xlsx");
+            saveAs(blob, fileName);
         } catch (err) {
             console.error("TA 엑셀 생성 오류:", err);
             alert("TA 엑셀 다운로드 중 오류가 발생했습니다.");
