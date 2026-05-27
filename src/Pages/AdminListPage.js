@@ -10,7 +10,7 @@ import { Dropdown } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useRecoilValue } from "recoil";
 import * as XLSX from "xlsx";
-import AdminListToolbar from "../components/ListPage/AdminListToolbar";
+import AdminListToolbar, { AdminListDownloadButtons } from "../components/ListPage/AdminListToolbar";
 import { PageContainer } from "../components/PageContainer";
 import { loginMemberState } from "../recoil/atom/loginMemberState";
 import { DOCUMENT_TYPE_FILTER_ALL } from "../config/documentTypes";
@@ -21,37 +21,101 @@ import {
     matchesDocumentTypeFilter,
 } from "../utils/documentTypeUtils";
 
+const CURRENT_YEAR = String(new Date().getFullYear());
+const MONTH_FILTER_ALL = "all";
+const CURRENT_MONTH = String(new Date().getMonth() + 1).padStart(2, "0");
+const ITEMS_PER_PAGE = 10;
+const SORT_KEY_WORK_DATE = "workDate";
+
+// 로컬스토리지에 남아 있을 수 있는 예전 월 형식("1월", "1")도 현재 포맷("01")으로 맞춘다.
+const normalizeMonthFilter = (value, fallback = CURRENT_MONTH) => {
+    if (!value) return fallback;
+    if (value === MONTH_FILTER_ALL) return MONTH_FILTER_ALL;
+
+    const matchedMonth = String(value).trim().match(/^(\d{1,2})(?:월)?$/);
+    if (!matchedMonth) return fallback;
+
+    const monthNumber = Number(matchedMonth[1]);
+    if (monthNumber < 1 || monthNumber > 12) return fallback;
+
+    return String(monthNumber).padStart(2, "0");
+};
+
+const getInitialYearFilter = () => {
+    const stored = localStorage.getItem("admin_yearFilter");
+    if (!stored || stored === "all") return CURRENT_YEAR;
+    return stored;
+};
+
+const getInitialMonthFilter = () => {
+    const stored = localStorage.getItem("admin_monthFilter");
+    return normalizeMonthFilter(stored);
+};
+
+const normalizeSortKey = (value) => {
+    if (value === "createdAt" || value === "expiredAt" || value === "updatedAt") return value;
+    return SORT_KEY_WORK_DATE;
+};
+
+const getWorkDateMoment = (doc) => {
+    const requestName = String(doc?.requestName ?? "");
+    const matched = requestName.match(/(?:^|_)(\d{4})_(\d{1,2})월(?:_|$)/);
+
+    if (matched) {
+        const [, year, month] = matched;
+        const workDate = moment(`${year}-${month}-01`, "YYYY-M-DD", true);
+
+        if (workDate.isValid()) {
+            return workDate;
+        }
+    }
+
+    const fallbackDate = moment(doc?.createdAt);
+    return fallbackDate.isValid() ? fallbackDate : moment.invalid();
+};
+
+const getFilterDateMoment = (doc, sortKey) => {
+    if (sortKey === SORT_KEY_WORK_DATE) {
+        return getWorkDateMoment(doc);
+    }
+
+    const filterDate = moment(doc?.[sortKey]);
+    return filterDate.isValid() ? filterDate : moment.invalid();
+};
+
 const AdminDocuments = () => {
     const loginMember = useRecoilValue(loginMemberState);
     const navigate = useNavigate();
     const [documents, setDocuments] = useState([]);
     const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10);
     const [viewMode, setViewMode] = useState("list");
     const [selectedDocs, setSelectedDocs] = useState([]);
     const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 1200);
-    // 필터 및 검색 관련 const
     const [searchQuery, setSearchQuery] = useState(localStorage.getItem("admin_searchQuery") || "");
-    const [sortKey, setSortKey] = useState(localStorage.getItem("admin_sortKey") || "createdAt");
+    const [sortKey, setSortKey] = useState(() => normalizeSortKey(localStorage.getItem("admin_sortKey")));
     const [sortOrder, setSortOrder] = useState(localStorage.getItem("admin_sortOrder") || "desc");
     const [statusFilter, setStatusFilter] = useState(localStorage.getItem("admin_statusFilter") || 'all');
     const [documentTypeFilter, setDocumentTypeFilter] = useState(
         localStorage.getItem("admin_documentTypeFilter") || DOCUMENT_TYPE_FILTER_ALL
     );
-    const [yearFilter, setYearFilter] = useState(localStorage.getItem("admin_yearFilter") || 'all');
-    // const currentMonth = `${new Date().getMonth() + 1}월`;
-    const [monthFilter, setMonthFilter] = useState(localStorage.getItem("admin_monthFilter") || 'all');
+    const [yearFilter, setYearFilter] = useState(getInitialYearFilter);
+    const [monthFilter, setMonthFilter] = useState(getInitialMonthFilter);
 
     useEffect(() => {
+        // 필터 상태를 유지해서 페이지를 벗어났다가 돌아와도 같은 목록을 보게 한다.
         localStorage.setItem("admin_yearFilter", yearFilter);
         localStorage.setItem("admin_monthFilter", monthFilter);
         localStorage.setItem("admin_statusFilter", statusFilter);
         localStorage.setItem("admin_documentTypeFilter", documentTypeFilter);
         localStorage.setItem("admin_sortKey", sortKey);
         localStorage.setItem("admin_sortOrder", sortOrder);
-    }, [yearFilter, monthFilter, statusFilter, documentTypeFilter, searchQuery, sortKey, sortOrder]);
+    }, [yearFilter, monthFilter, statusFilter, documentTypeFilter, sortKey, sortOrder]);
 
+    useEffect(() => {
+        // 조건이 바뀌면 현재 페이지가 범위를 벗어날 수 있으므로 첫 페이지로 되돌린다.
+        setCurrentPage(1);
+    }, [yearFilter, monthFilter, statusFilter, documentTypeFilter, sortKey, sortOrder, searchQuery]);
 
     useEffect(() => {
         const handleResize = () => setIsMobileView(window.innerWidth <= 1200);
@@ -71,6 +135,7 @@ const AdminDocuments = () => {
     useEffect(() => {
         if (!loginMember || loginMember.role?.trim().toUpperCase() !== "ROLE_ADMIN") return;
 
+        // 관리자 화면에서는 삭제된 상태(status 5)를 제외한 문서만 목록에 올린다.
         ApiService.fetchDocuments("admin")
             .then((response) => {
                 const filteredDocuments = response.data.filter(doc => doc.status !== 5);
@@ -132,29 +197,35 @@ const AdminDocuments = () => {
 
     const handleSearchChange = (event) => {
         setSearchQuery(event.target.value);
-        setCurrentPage(1);
     };
 
     const yearOptions = Array.from(
-        new Set(
-            documents.flatMap((doc) => {
-                const candidates = [doc.createdAt, doc.updatedAt, doc.expiredAt];
+        new Set([
+            CURRENT_YEAR,
+            ...documents.flatMap((doc) => {
+                const candidates = [
+                    getWorkDateMoment(doc),
+                    moment(doc.createdAt),
+                    moment(doc.updatedAt),
+                    moment(doc.expiredAt),
+                ];
+
                 return candidates
-                    .map((value) => moment(value))
                     .filter((date) => date.isValid())
                     .map((date) => date.format("YYYY"));
-            })
-        )
+            }),
+        ])
     ).sort((a, b) => Number(b) - Number(a));
 
     const documentTypeFilterOptions = getDocumentTypeFilterOptions();
 
+    // 화면에 보여줄 목록은 검색어, 문서 종류, 연/월, 상태, 정렬 조건을 한 번에 반영해 계산한다.
     const filteredDocuments = documents
         .filter(doc => doc.requestName.toLowerCase().includes(searchQuery.toLowerCase()))
         .filter((doc) => matchesDocumentTypeFilter(doc.type, documentTypeFilter))
         .filter((doc) => {
-            if (yearFilter === "all") return true;
-            return moment(doc.createdAt).format("YYYY") === yearFilter;
+            const filterDate = getFilterDateMoment(doc, sortKey);
+            return filterDate.isValid() && filterDate.format("YYYY") === yearFilter;
         })
         .filter((doc) => {
             if (statusFilter === "all") return true;
@@ -162,17 +233,25 @@ const AdminDocuments = () => {
             return String(doc.status) === statusFilter;
         })
         .filter((doc) => {
-            if (monthFilter === "all") return true;
-            return doc.requestName.includes(monthFilter);
+            if (monthFilter === MONTH_FILTER_ALL) return true;
+            const selectedMonth = Number(monthFilter);
+            const filterDate = getFilterDateMoment(doc, sortKey);
+            return filterDate.isValid() && filterDate.month() + 1 === selectedMonth;
         })
 
         .sort((a, b) => {
-            const dateA = new Date(a[sortKey] ?? 0);
-            const dateB = new Date(b[sortKey] ?? 0);
+            const dateA = getFilterDateMoment(a, sortKey);
+            const dateB = getFilterDateMoment(b, sortKey);
+            const timeA = dateA.isValid() ? dateA.valueOf() : 0;
+            const timeB = dateB.isValid() ? dateB.valueOf() : 0;
 
-            const result = dateB - dateA;
+            const result = timeB - timeA;
             return sortOrder === "desc" ? result : -result;
         });
+
+    const filteredDocumentIds = new Set(filteredDocuments.map((doc) => doc.id));
+    // 선택 상태는 유지하되, 현재 필터 결과에 포함된 문서만 후속 작업 대상으로 본다.
+    const selectedFilteredDocs = selectedDocs.filter((doc) => filteredDocumentIds.has(doc.id));
 
     const toggleSelectDoc = (doc) => {
         setSelectedDocs(prev =>
@@ -182,70 +261,75 @@ const AdminDocuments = () => {
         );
     };
 
-    const areAllSelected = selectedDocs.length === filteredDocuments.length && filteredDocuments.length > 0;
+    const areAllSelected = selectedFilteredDocs.length === filteredDocuments.length && filteredDocuments.length > 0;
     const toggleSelectAllDocs = () => {
-        if (areAllSelected) {
-            setSelectedDocs([]);
-        } else {
-            setSelectedDocs(filteredDocuments);
+        setSelectedDocs((prev) => {
+            const outsideFilteredDocs = prev.filter((doc) => !filteredDocumentIds.has(doc.id));
+
+            if (areAllSelected) {
+                return outsideFilteredDocs;
+            }
+
+            return [...outsideFilteredDocs, ...filteredDocuments];
+        });
+    };
+
+    const downloadableDocs = selectedFilteredDocs.filter((doc) => doc.status === 1);
+    const isDownloadable = downloadableDocs.length > 0;
+
+    const handleBulkDownload = () => {
+        if (selectedFilteredDocs.length === 0) {
+            alert("선택된 문서가 없습니다.");
+            return;
         }
+
+        if (!isDownloadable) {
+            alert("서명이 완료된 문서를 선택해주세요.");
+            return;
+        }
+
+        const shouldDownload = window.confirm("서명 완료 문서만 다운로드 합니다.");
+        if (!shouldDownload) return;
+
+        downloadZip(downloadableDocs.map((doc) => doc.id));
     };
 
-    const isDownloadable = selectedDocs.length > 0 && selectedDocs.every(doc => doc.status === 1);
-
-    // 작업 정보 엑셀 저장
-    const handleExcelDownload = () => {
-        const worksheetData = selectedDocs.map(doc => ({
-            문서명: doc.requestName,
-            상태: getStatusLabel(doc.status),
-            요청생성일: moment(doc.createdAt).format("YYYY-MM-DD HH:mm"),
-            요청만료일: moment(doc.expiredAt).format("YYYY-MM-DD HH:mm"),
-            수정일: doc.updatedAt ? moment(doc.updatedAt).format("YYYY-MM-DD HH:mm") : "없음",
-            요청자: doc.requesterName || "알 수 없음"
-        }));
-
-        const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "문서 목록");
-
-        const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-        const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-        saveAs(blob, "Ta근무일지.xlsx");
-    };
-
-    // Ta 제출 현황 엑셀 다운로드
     const handleTaExcelDownload = async () => {
-        if (monthFilter === 'all') {
-            alert("월을 선택해주세요.");
+        if (selectedFilteredDocs.length === 0) {
+            alert("선택된 문서가 없습니다.");
             return;
         }
         try {
             const res = await ApiService.excelTa();
             const taList = res.data;
 
-            const docsThisMonth = filteredDocuments;
-
-            const result = taList.map((ta) => {
-                // 해당 TA+강의명과 일치하는 모든 문서 찾기
-                const matchedDocs = docsThisMonth.filter(doc =>
-                    doc.requestName.includes(ta.taName) &&
+            const result = taList.reduce((rows, ta) => {
+                // 선택된 문서 중 같은 과목의 최신 문서 상태만 제출 현황에 반영한다.
+                const matchedDocs = selectedFilteredDocs.filter(doc =>
                     doc.requestName.includes(ta.lecture)
                 );
 
-                // 가장 최신 문서 선택 (createdAt 기준)
-                let latestDoc = null;
-                if (matchedDocs.length > 0) {
-                    latestDoc = matchedDocs.reduce((a, b) =>
-                        new Date(a.createdAt) > new Date(b.createdAt) ? a : b
-                    );
+                if (matchedDocs.length === 0) {
+                    return rows;
                 }
 
-                return {
+                const latestDoc = matchedDocs.reduce((a, b) =>
+                    new Date(a.createdAt) > new Date(b.createdAt) ? a : b
+                );
+
+                rows.push({
                     "TA명": ta.taName,
                     "과목명": ta.lecture,
-                    "상태": latestDoc ? getStatusLabel(latestDoc.status) : ""
-                };
-            });
+                    "상태": getStatusLabel(latestDoc.status)
+                });
+
+                return rows;
+            }, []);
+
+            if (result.length === 0) {
+                alert("선택한 문서와 일치하는 제출 현황이 없습니다.");
+                return;
+            }
 
             const worksheet = XLSX.utils.json_to_sheet(result);
             const workbook = XLSX.utils.book_new();
@@ -253,8 +337,11 @@ const AdminDocuments = () => {
 
             const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
             const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+            const fileName = monthFilter === MONTH_FILTER_ALL
+                ? "TA근무현황.xlsx"
+                : `${Number(monthFilter)}월_TA근무현황.xlsx`;
 
-            saveAs(blob, `${monthFilter}_TA근무현황.xlsx`);
+            saveAs(blob, fileName);
         } catch (err) {
             console.error("TA 엑셀 생성 오류:", err);
             alert("TA 엑셀 다운로드 중 오류가 발생했습니다.");
@@ -264,6 +351,7 @@ const AdminDocuments = () => {
     const [signers, setSigners] = useState([]);
     const [showSignersModal, setShowSignersModal] = useState(false);
 
+    // 상세 화면으로 이동하지 않고도 서명 진행 상황을 바로 확인할 수 있게 별도 조회한다.
     const handleSearchClick = (docId) => {
         ApiService.fetchSignersByDocument(docId)
             .then((response) => {
@@ -275,7 +363,7 @@ const AdminDocuments = () => {
             });
     };
 
-    const [openDropdownId, setOpenDropdownId] = useState(null); // 추가
+    const [openDropdownId, setOpenDropdownId] = useState(null);
 
     const toggleDropdown = (id) => {
         setOpenDropdownId((prevId) => (prevId === id ? null : id));
@@ -315,26 +403,38 @@ const AdminDocuments = () => {
                 onSearchChange={handleSearchChange}
                 viewMode={viewMode}
                 setViewMode={setViewMode}
-                isDownloadable={isDownloadable}
-                onExcelDownload={handleExcelDownload}
-                onBulkDownload={() => downloadZip(selectedDocs.map((doc) => doc.id))}
-                onTaExcelDownload={handleTaExcelDownload}
             />
             <div style={{
                 maxWidth: "85%",
                 margin: "0 auto",
                 padding: "0 11px",
             }}>
-                <div style={{display: "flex", alignItems: "center", gap: "8px", paddingLeft: "15px", marginTop: "4px"}}>
-                    <input
-                        type="checkbox"
-                        checked={areAllSelected}
-                        onChange={toggleSelectAllDocs}
-                        style={{transform: "scale(1.2)"}}
+                <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "12px",
+                    width: "100%",
+                    paddingLeft: "15px",
+                    boxSizing: "border-box",
+                    marginTop: "4px",
+                }}>
+                    <div style={{display: "flex", alignItems: "center", gap: "8px"}}>
+                        <input
+                            type="checkbox"
+                            checked={areAllSelected}
+                            onChange={toggleSelectAllDocs}
+                            style={{transform: "scale(1.2)"}}
+                        />
+                        <label style={{fontSize: "0.9rem"}}>
+                            전체 선택 ({selectedFilteredDocs.length} / {filteredDocuments.length})
+                        </label>
+                    </div>
+                    <AdminListDownloadButtons
+                        isDownloadable={isDownloadable}
+                        onBulkDownload={handleBulkDownload}
+                        onTaExcelDownload={handleTaExcelDownload}
                     />
-                    <label style={{fontSize: "0.9rem"}}>
-                        전체 선택 ({selectedDocs.length} / {filteredDocuments.length})
-                    </label>
                 </div>
             </div>
 
@@ -347,7 +447,7 @@ const AdminDocuments = () => {
                     margin: "auto",
                     padding: "12px"
                 }}>
-                    {filteredDocuments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((doc) => (
+                    {filteredDocuments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((doc) => (
                         <div key={doc.id} style={{
                             border: "1px solid #ddd",
                             borderRadius: "10px",
@@ -410,35 +510,6 @@ const AdminDocuments = () => {
                                 bottom: '12px',
                                 right: '12px'
                             }}>
-                                <div style={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                    marginTop: "8px",
-                                    gap: "6px"
-                                }}>
-                                    <button
-                                        onClick={() => navigate(`/check-task/${doc.id}`)}
-                                        disabled={doc.status !== 7}
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "4px",
-                                            padding: "4px 8px",
-                                            border: "1px solid #ccc",
-                                            borderRadius: "4px",
-                                            backgroundColor: doc.status === 7 ? "#007bff" : "transparent",
-                                            color: doc.status === 7 ? "#fff" : "#aaa",
-                                            fontSize: "0.8rem",
-                                            fontWeight: "bold",
-                                            cursor: doc.status === 7 ? "pointer" : "not-allowed",
-                                            minWidth: "60px",
-                                            maxWidth: "80px"
-                                        }}
-                                    >
-                                        <SearchIcon fontSize="small"/>
-                                        검토
-                                    </button>
-                                </div>
                                 {isMobileView ? (
                                     <Dropdown>
                                         <Dropdown.Toggle
@@ -505,6 +576,23 @@ const AdminDocuments = () => {
 
                                                 <div
                                                     onClick={() => {
+                                                        if (doc.status === 7) {
+                                                            navigate(`/check-task/${doc.id}`);
+                                                            setOpenDropdownId(null);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        ...iconButtonStyle,
+                                                        color: doc.status !== 7 ? "#aaa" : "#333",
+                                                        pointerEvents: doc.status !== 7 ? "none" : "auto",
+                                                    }}
+                                                >
+                                                    <SearchIcon fontSize="small" style={{marginRight: "6px"}}/>
+                                                    검토
+                                                </div>
+
+                                                <div
+                                                    onClick={() => {
                                                         if (window.confirm("정말 이 문서를 삭제하시겠습니까?")) {
                                                             ApiService.deleteDocument(doc.id,'admin')
                                                                 .then(() => {
@@ -564,6 +652,25 @@ const AdminDocuments = () => {
                                         >
                                             <DownloadIcon fontSize="small" style={{marginRight: "6px"}}/>
                                             다운로드
+                                        </button>
+                                        <button
+                                            onClick={() => navigate(`/check-task/${doc.id}`)}
+                                            disabled={doc.status !== 7}
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                padding: "5px 10px",
+                                                border: "1px solid #ccc",
+                                                borderRadius: "5px",
+                                                backgroundColor: doc.status === 7 ? "#007bff" : "transparent",
+                                                color: doc.status === 7 ? "#fff" : "#aaa",
+                                                fontSize: "0.8rem",
+                                                fontWeight: "bold",
+                                                cursor: doc.status === 7 ? "pointer" : "not-allowed",
+                                            }}
+                                        >
+                                            <SearchIcon fontSize="small" style={{marginRight: "6px"}}/>
+                                            검토
                                         </button>
                                         <button
                                             onClick={() => {
@@ -670,7 +777,7 @@ const AdminDocuments = () => {
 
             {viewMode === "list" && (
                 <div style={{display: "flex", justifyContent: "center", marginTop: "20px"}}>
-                    <Pagination count={Math.ceil(filteredDocuments.length / itemsPerPage)} color="default"
+                    <Pagination count={Math.ceil(filteredDocuments.length / ITEMS_PER_PAGE)} color="default"
                                 page={currentPage} onChange={handlePageChange} style={{marginBottom: "1rem"}}/>
                 </div>
             )}

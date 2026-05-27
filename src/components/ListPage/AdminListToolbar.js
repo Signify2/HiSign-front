@@ -38,6 +38,33 @@ const filterSelectStyle = {
     MozAppearance: "none",
 };
 
+const DOWNLOAD_GROUP_BG = "#eef1f5";
+const DOWNLOAD_HOVER_BG = "#d5dce6";
+const DOWNLOAD_ACTIVE_BG = "#c5ced9";
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1;
+    return {
+        value: String(month).padStart(2, "0"),
+        label: `${month}월`,
+    };
+});
+
+const downloadSegmentSx = () => ({
+    display: "inline-flex",
+    alignItems: "center",
+    alignSelf: "stretch",
+    cursor: "pointer",
+    bgcolor: DOWNLOAD_GROUP_BG,
+    transition: "background-color 0.2s ease",
+    "&:hover": {
+        bgcolor: DOWNLOAD_HOVER_BG,
+        cursor: "pointer",
+    },
+    "&:active": {
+        bgcolor: DOWNLOAD_ACTIVE_BG,
+    },
+});
+
 const downloadGroupButtonSx = {
     textTransform: "none",
     fontWeight: 600,
@@ -45,7 +72,7 @@ const downloadGroupButtonSx = {
     borderRadius: 0,
     boxShadow: "none",
     minHeight: CONTROL_HEIGHT,
-    height: CONTROL_HEIGHT,
+    height: "100%",
     minWidth: "unset",
     width: "auto",
     flex: "0 0 auto",
@@ -54,12 +81,16 @@ const downloadGroupButtonSx = {
     whiteSpace: "nowrap",
     color: "#334155",
     bgcolor: "transparent",
-    "&:hover": {
-        boxShadow: "none",
-        bgcolor: "rgba(15, 23, 42, 0.06)",
+    pointerEvents: "none",
+    "& .MuiButton-startIcon .MuiSvgIcon-root": {
+        color: "#64748b",
+        transition: "transform 0.15s ease",
     },
-    "&.Mui-disabled": {
-        color: "#94a3b8",
+};
+
+const downloadSegmentHoverIconSx = {
+    "&:hover .MuiButton-startIcon .MuiSvgIcon-root": {
+        transform: "scale(1.08)",
     },
 };
 
@@ -68,7 +99,6 @@ const DownloadGroupDivider = () => (
         sx={{
             width: "1px",
             alignSelf: "stretch",
-            my: 0.75,
             bgcolor: "#d1d5db",
             flexShrink: 0,
         }}
@@ -132,6 +162,92 @@ const ViewModeToggle = ({ viewMode, setViewMode }) => (
     </Box>
 );
 
+export const AdminListDownloadButtons = ({
+    isDownloadable,
+    onBulkDownload,
+    onTaExcelDownload,
+}) => {
+    return (
+        <Box
+            sx={{
+                display: "inline-flex",
+                flexWrap: "nowrap",
+                alignItems: "stretch",
+                gap: 0,
+                borderRadius: 2,
+                bgcolor: DOWNLOAD_GROUP_BG,
+                overflow: "hidden",
+                maxWidth: "100%",
+                flex: "0 0 auto",
+                minWidth: 0,
+                ml: "auto",
+                cursor: "pointer",
+            }}
+        >
+            <Box
+                role="button"
+                tabIndex={0}
+                aria-disabled={!isDownloadable}
+                onClick={() => {
+                    onBulkDownload();
+                }}
+                onKeyDown={(e) => {
+                    if (e.key !== "Enter" && e.key !== " ") return;
+                    e.preventDefault();
+                    onBulkDownload();
+                }}
+                sx={{
+                    ...downloadSegmentSx(),
+                    ...downloadSegmentHoverIconSx,
+                }}
+            >
+                <Button
+                    size="small"
+                    variant="text"
+                    tabIndex={-1}
+                    disableRipple
+                    startIcon={<DownloadIcon sx={{ fontSize: 18 }} />}
+                    sx={downloadGroupButtonSx}
+                >
+                    PDF 다운로드
+                </Button>
+            </Box>
+            <DownloadGroupDivider />
+            <Box
+                role="button"
+                tabIndex={0}
+                aria-disabled={false}
+                onClick={() => {
+                    onTaExcelDownload();
+                }}
+                onKeyDown={(e) => {
+                    if (e.key !== "Enter" && e.key !== " ") return;
+                    e.preventDefault();
+                    onTaExcelDownload();
+                }}
+                sx={{
+                    ...downloadSegmentSx(),
+                    ...downloadSegmentHoverIconSx,
+                }}
+            >
+                <Button
+                    size="small"
+                    variant="text"
+                    tabIndex={-1}
+                    disableRipple
+                    startIcon={<DownloadIcon sx={{ fontSize: 18 }} />}
+                    sx={{
+                        ...downloadGroupButtonSx,
+                        px: 1.75,
+                    }}
+                >
+                    제출 현황 다운로드
+                </Button>
+            </Box>
+        </Box>
+    );
+};
+
 const AdminListToolbar = ({
     sortKey,
     setSortKey,
@@ -151,10 +267,6 @@ const AdminListToolbar = ({
     onSearchChange,
     viewMode,
     setViewMode,
-    isDownloadable,
-    onExcelDownload,
-    onBulkDownload,
-    onTaExcelDownload,
 }) => (
     <Box
         sx={{
@@ -166,7 +278,6 @@ const AdminListToolbar = ({
             py: 1.5,
             borderRadius: 2,
             bgcolor: "#fff",
-            border: "1px solid #e8ecf1",
             display: "flex",
             flexDirection: "column",
             gap: 0,
@@ -174,13 +285,13 @@ const AdminListToolbar = ({
             overflow: "hidden",
         }}
     >
-        {/* 상단: 다운로드(왼쪽) | 작업명 검색(오른쪽) */}
+        {/* 상단: 작업명 검색 */}
         <Box
             sx={{
                 display: "flex",
                 flexWrap: "wrap",
                 alignItems: "center",
-                justifyContent: "flex-start",
+                justifyContent: "flex-end",
                 gap: 1.5,
                 pb: 1.5,
                 minWidth: 0,
@@ -190,84 +301,11 @@ const AdminListToolbar = ({
             <Box
                 sx={{
                     display: "flex",
-                    flexWrap: "nowrap",
-                    alignItems: "stretch",
-                    borderRadius: 2,
-                    bgcolor: "#eef1f5",
-                    border: "1px solid #e2e8f0",
-                    overflowX: "auto",
-                    maxWidth: "100%",
-                    flex: "0 1 auto",
-                    minWidth: 0,
-                }}
-            >
-                <Button
-                    size="small"
-                    variant="text"
-                    onClick={onExcelDownload}
-                    disabled={!isDownloadable}
-                    startIcon={
-                        <DownloadIcon
-                            sx={{
-                                fontSize: 18,
-                                color: !isDownloadable ? "#94a3b8" : "#64748b",
-                            }}
-                        />
-                    }
-                    sx={downloadGroupButtonSx}
-                >
-                    엑셀 다운로드
-                </Button>
-                <DownloadGroupDivider />
-                <Button
-                    size="small"
-                    variant="text"
-                    onClick={onBulkDownload}
-                    disabled={!isDownloadable}
-                    startIcon={
-                        <DownloadIcon
-                            sx={{
-                                fontSize: 18,
-                                color: !isDownloadable ? "#94a3b8" : "#64748b",
-                            }}
-                        />
-                    }
-                    sx={downloadGroupButtonSx}
-                >
-                    일괄 다운로드
-                </Button>
-                <DownloadGroupDivider />
-                <Button
-                    size="small"
-                    variant="text"
-                    onClick={onTaExcelDownload}
-                    disabled={monthFilter === "all"}
-                    startIcon={
-                        <DownloadIcon
-                            sx={{
-                                fontSize: 18,
-                                color: monthFilter === "all" ? "#94a3b8" : "#64748b",
-                            }}
-                        />
-                    }
-                    sx={{
-                        ...downloadGroupButtonSx,
-                        px: 1.75,
-                    }}
-                >
-                    제출 현황 다운로드
-                </Button>
-            </Box>
-
-            <Box
-                sx={{
-                    display: "flex",
                     alignItems: "center",
                     gap: 1,
                     flex: "0 0 auto",
                     minWidth: 0,
                     maxWidth: "100%",
-                    ml: "auto",
                 }}
             >
                 <TextField
@@ -334,7 +372,6 @@ const AdminListToolbar = ({
                     value={yearFilter}
                     onChange={(e) => setYearFilter(e.target.value)}
                 >
-                    <option value="all">년도</option>
                     {yearOptions.map((year) => (
                         <option key={year} value={year}>
                             {year}년
@@ -347,18 +384,11 @@ const AdminListToolbar = ({
                     onChange={(e) => setMonthFilter(e.target.value)}
                 >
                     <option value="all">월</option>
-                    <option value="1월">1월</option>
-                    <option value="2월">2월</option>
-                    <option value="3월">3월</option>
-                    <option value="4월">4월</option>
-                    <option value="5월">5월</option>
-                    <option value="6월">6월</option>
-                    <option value="7월">7월</option>
-                    <option value="8월">8월</option>
-                    <option value="9월">9월</option>
-                    <option value="10월">10월</option>
-                    <option value="11월">11월</option>
-                    <option value="12월">12월</option>
+                    {MONTH_OPTIONS.map(({ value, label }) => (
+                        <option key={value} value={value}>
+                            {label}
+                        </option>
+                    ))}
                 </FilterSelect>
 
                 <FilterSelect
@@ -379,6 +409,7 @@ const AdminListToolbar = ({
                     value={sortKey}
                     onChange={(e) => setSortKey(e.target.value)}
                 >
+                    <option value="workDate">근무일</option>
                     <option value="createdAt">생성일</option>
                     <option value="expiredAt">만료일</option>
                     <option value="updatedAt">수정일</option>
