@@ -62,7 +62,7 @@ const SetupTaskPage = () => {
         setExpirationTime(timePart?.slice(0, 5) || "23:59");
       }
     }
-  }, [document]);
+  }, []);
 
   useEffect(() => {
     ApiService.getSubjects(docType)
