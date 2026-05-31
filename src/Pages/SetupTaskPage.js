@@ -162,9 +162,9 @@ const SetupTaskPage = () => {
     const formattedExpiration = kstDate.toISOString().slice(0, 19);
     //console.log("만료일:", formattedExpiration);
     const finalRequestName =
-      taskType === "taTask"
-        ? `${selectedSubject}_${selectedYear}_${selectedMonth}_${member.name}_${member.uniqueId}`
-        : requestName;
+        taskType === "taTask"
+            ? selectedSubject
+            : requestName;
     const isRejectableFinal = taskType === "taTask" ? 1 : isRejectable;
     const type = taskType === "taTask"
         ? (docType === "research" ? "RESEARCH" : "WORKLOG")

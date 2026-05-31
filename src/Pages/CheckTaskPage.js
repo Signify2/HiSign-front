@@ -28,7 +28,7 @@ const CheckTaskPage = () => {
   useEffect(() => {
     ApiService.fetchDocumentInfo(documentId)
     .then(response => {
-      //console.log("문서 정보:", response);
+      console.log("response.data 전체:", response.data);
       
       // 🔥 여기 추가
       if (response.data.status !== 7) {
@@ -40,10 +40,9 @@ const CheckTaskPage = () => {
       setUniqueId(partsTitle[3]);
       setSigning((prevState) => ({
         ...prevState,
-        requesterName: partsTitle[2],
+        requesterName: response.data.requesterName,
       }));
-      setSubject(partsTitle[0]);
-      setMonth(partsTitle[1]);
+      setSubject(response.data.requestName);
     })
     .catch(error => {
       setError('문서 제목을 로드하는 중 오류가 발생했습니다: ' + error.message);
