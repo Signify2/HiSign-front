@@ -170,7 +170,9 @@ const SetupTaskPage = () => {
         ? (docType === "research" ? "RESEARCH" : "WORKLOG")
         : "BASIC"
     const finalDescription =
-      taskType === "taTask" ? `[${selectedSubject}] ${selectedYear}년 ${selectedMonth} TA 근무일지 입니다.` : description;
+        taskType === "taTask"
+            ? `[${selectedSubject}] ${selectedYear}년 ${selectedMonth} ${docType === "research" ? "연구참여확약서" : "TA 근무일지"} 입니다.`
+            : description;
     const finalPassword = taskType === "taTask" ? "NONE" : password;
     setTaskState((prev) => ({
       ...prev,
