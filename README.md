@@ -22,8 +22,8 @@
 
 ## Members
 
-## 2025년
+## 2026년
 
 | [<img src="https://secure.gravatar.com/avatar/49269218?d=identicon" width="100">](https://github.com/HongKing896) | [<img src="https://secure.gravatar.com/avatar/89755770?d=identicon" width="100">](https://github.com/thisissolmi) | [<img src="https://secure.gravatar.com/avatar/45687157?d=identicon" width="100">](https://github.com/chanmi12) |
 |:---------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------: |
-|                                                   김홍찬                                                    |                                                    김솔미                                                    |                                                   류찬미                                                    |
+|                                                   김가영                                                    |                                                    백승범                                                    |                                                   이경민                                                    |
