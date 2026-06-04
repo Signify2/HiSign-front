@@ -189,7 +189,7 @@ function Sidebar() {
                         <LinkItem
                             to="/admin-document"
                             active={currentPath.startsWith("/admin-document")}
-                            label="[ 근무일지 관리 ] "
+                            label="[ 작업현황 관리 ] "
                         />
                         <LinkItem
                             to="/subject-manage"
