@@ -221,7 +221,12 @@ const AdminDocuments = () => {
 
     // 화면에 보여줄 목록은 검색어, 문서 종류, 연/월, 상태, 정렬 조건을 한 번에 반영해 계산한다.
     const filteredDocuments = documents
-        .filter(doc => doc.requestName.toLowerCase().includes(searchQuery.toLowerCase()))
+        .filter(doc => {
+            const displayName = (doc.type === "WORKLOG" || doc.type === "RESEARCH") && doc.createdAt
+                ? `${doc.requestName}_${moment(doc.createdAt).format('YYYY년M월')}_${doc.requesterName || ""}(${doc.requesterUniqueId || ""})`
+                : doc.requestName;
+            return displayName.toLowerCase().includes(searchQuery.toLowerCase());
+        })
         .filter((doc) => matchesDocumentTypeFilter(doc.type, documentTypeFilter))
         .filter((doc) => {
             const filterDate = getFilterDateMoment(doc, sortKey);
@@ -484,7 +489,9 @@ const AdminDocuments = () => {
 
                             <div style={{flex: 1, paddingLeft: "36px", color: "#000000"}}>
                                 <div style={{fontWeight: "bold", color: "#000000"}}>
-                                    {doc.requestName}
+                                    {(doc.type === "WORKLOG" || doc.type === "RESEARCH") && doc.createdAt
+                                        ? `${doc.requestName}_${moment(doc.createdAt).format('YYYY년M월')}_${doc.requesterName || ""}(${doc.requesterUniqueId || ""})`
+                                        : doc.requestName}
                                     <button
                                         onClick={() => handleSearchClick(doc.id)}
                                         style={{
@@ -742,7 +749,11 @@ const AdminDocuments = () => {
                             flexDirection: "column",
                             justifyContent: "space-between"
                         }}>
-                            <div style={{fontWeight: "bold", marginBottom: "8px"}}>{doc.requestName}</div>
+                            <div style={{fontWeight: "bold", marginBottom: "8px"}}>
+                                {(doc.type === "WORKLOG" || doc.type === "RESEARCH") && doc.createdAt
+                                    ? `${doc.requestName}_${moment(doc.createdAt).format('YYYY년M월')}_${doc.requesterName || ""}(${doc.requesterUniqueId || ""})`
+                                    : doc.requestName}
+                            </div>
                             <embed src={doc.previewUrl || doc.fileUrl} type="application/pdf" width="100%"
                                    height="150px"/>
                             <div style={{marginTop: "8px", fontSize: "14px"}}>

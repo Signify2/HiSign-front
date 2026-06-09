@@ -162,15 +162,17 @@ const SetupTaskPage = () => {
     const formattedExpiration = kstDate.toISOString().slice(0, 19);
     //console.log("만료일:", formattedExpiration);
     const finalRequestName =
-      taskType === "taTask"
-        ? `${selectedSubject}_${selectedYear}_${selectedMonth}_${member.name}_${member.uniqueId}`
-        : requestName;
+        taskType === "taTask"
+            ? selectedSubject
+            : requestName;
     const isRejectableFinal = taskType === "taTask" ? 1 : isRejectable;
     const type = taskType === "taTask"
         ? (docType === "research" ? "RESEARCH" : "WORKLOG")
         : "BASIC"
     const finalDescription =
-      taskType === "taTask" ? `[${selectedSubject}] ${selectedYear}년 ${selectedMonth} TA 근무일지 입니다.` : description;
+        taskType === "taTask"
+            ? `[${selectedSubject}] ${selectedYear}년 ${selectedMonth} ${docType === "research" ? "연구참여확약서" : "TA 근무일지"} 입니다.`
+            : description;
     const finalPassword = taskType === "taTask" ? "NONE" : password;
     setTaskState((prev) => ({
       ...prev,

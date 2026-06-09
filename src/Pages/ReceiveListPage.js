@@ -152,7 +152,9 @@ const ReceivedDocuments = () => {
 
     const filteredDocuments = documents
         .filter((doc) =>
-            doc.requestName.toLowerCase().includes(searchQuery.toLowerCase())
+            ((doc.type === "WORKLOG" || doc.type === "RESEARCH") && doc.createdAt
+                ? `${doc.requestName}_${moment(doc.createdAt).format('YYYY년M월')}_${doc.requesterName || ""}(${doc.requesterUniqueId || ""})`
+                : doc.requestName).toLowerCase().includes(searchQuery.toLowerCase())
         )
         .filter((doc) => {
             if (statusFilter === "all") return true;
@@ -256,7 +258,9 @@ const ReceivedDocuments = () => {
                             minHeight: "8rem"
                         }}>
                             <div style={{flex: 1}}>
-                                <div style={{fontWeight: "bold", color: "#000000"}}>{doc.requestName}</div>
+                                <div style={{fontWeight: "bold", color: "#000000"}}>{(doc.type === "WORKLOG" || doc.type === "RESEARCH") && doc.createdAt
+                                    ? `${doc.requestName}_${moment(doc.createdAt).format('YYYY년M월')}_${doc.requesterName || ""}(${doc.requesterUniqueId || ""})`
+                                    : doc.requestName}</div>
                                 <div style={{marginTop: "6px", color: "#000000"}}>상태: <StatusBadge status={doc.status}/></div>
                                 <div style={{marginTop: "4px", color: "#000000"}}>생성일: {moment(doc.createdAt).format("YYYY/MM/DD")}</div>
                                 <div style={{
@@ -515,7 +519,9 @@ const ReceivedDocuments = () => {
                             border: "1px solid #ddd", borderRadius: "8px", padding: "16px",
                             boxShadow: "0px 4px 10px rgba(0,0,0,0.1)", backgroundColor: "#fff"
                         }}>
-                            <div style={{fontWeight: "bold", marginBottom: "8px"}}>{doc.requestName}</div>
+                            <div style={{fontWeight: "bold", marginBottom: "8px"}}>{(doc.type === "WORKLOG" || doc.type === "RESEARCH") && doc.createdAt
+                                ? `${doc.requestName}_${moment(doc.createdAt).format('YYYY년M월')}_${doc.requesterName || ""}(${doc.requesterUniqueId || ""})`
+                                : doc.requestName}</div>
                             <embed src={doc.previewUrl || doc.fileUrl} type="application/pdf" width="100%"
                                    height="150px"/>
                             <div style={{marginTop: "8px", fontSize: "14px"}}>

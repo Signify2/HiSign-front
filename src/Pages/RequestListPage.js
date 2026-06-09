@@ -171,7 +171,9 @@ const RequestedDocuments = () => {
     };
 
     const filteredDocuments = documents
-        .filter(doc => doc.requestName.toLowerCase().includes(searchQuery.toLowerCase()))
+        .filter(doc => ((doc.type === "WORKLOG" || doc.type === "RESEARCH") && doc.createdAt
+            ? `${doc.requestName}_${moment(doc.createdAt).format('YYYY년M월')}_${doc.requesterUniqueId || ""}`
+            : doc.requestName).toLowerCase().includes(searchQuery.toLowerCase()))
         .filter((doc) => {
             if (statusFilter === "all") return true;
             if (statusFilter === "rejected") return doc.status === 2 || doc.status === 6;
@@ -315,7 +317,9 @@ const RequestedDocuments = () => {
                                     alignItems: "center",
                                     color: "#000000"
                                 }}>
-                                    {doc.requestName}
+                                    {(doc.type === "WORKLOG" || doc.type === "RESEARCH") && doc.createdAt
+                                        ? `${doc.requestName}_${moment(doc.createdAt).format('YYYY년M월')}_${doc.requesterUniqueId || ""}`
+                                        : doc.requestName}
                                     <button
                                         onClick={() => handleSearchClick(doc.id)}
                                         style={{
@@ -594,7 +598,9 @@ const RequestedDocuments = () => {
                             justifyContent: "space-between"
                         }}>
                             <div>
-                                <div style={{marginBottom: "8px", fontWeight: "bold"}}>{doc.requestName}</div>
+                                <div style={{marginBottom: "8px", fontWeight: "bold"}}>{(doc.type === "WORKLOG" || doc.type === "RESEARCH") && doc.createdAt
+                                    ? `${doc.requestName}_${moment(doc.createdAt).format('YYYY년M월')}_${doc.requesterUniqueId || ""}`
+                                    : doc.requestName}</div>
                                 <div>
                                     <StatusBadge status={doc.status}/>
                                 </div>
