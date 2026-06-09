@@ -241,7 +241,7 @@ export const AdminListDownloadButtons = ({
                         px: 1.75,
                     }}
                 >
-                    제출 현황 다운로드
+                    작업현황 다운로드
                 </Button>
             </Box>
         </Box>

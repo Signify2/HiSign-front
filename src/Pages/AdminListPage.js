@@ -13,7 +13,7 @@ import * as XLSX from "xlsx";
 import AdminListToolbar, { AdminListDownloadButtons } from "../components/ListPage/AdminListToolbar";
 import { PageContainer } from "../components/PageContainer";
 import { loginMemberState } from "../recoil/atom/loginMemberState";
-import { DOCUMENT_TYPE_FILTER_ALL } from "../config/documentTypes";
+import { DOCUMENT_TYPE_FILTER_ALL, DOCUMENT_TYPES } from "../config/documentTypes";
 import ApiService from "../utils/ApiService";
 import { downloadPDF, downloadZip } from "../utils/DownloadUtils";
 import {
@@ -300,46 +300,62 @@ const AdminDocuments = () => {
             return;
         }
         try {
-            const res = await ApiService.excelTa();
-            const taList = res.data;
+            const getDocumentTypeLabel = (type) => {
+                const found = DOCUMENT_TYPES.find(t => t.typeValue === type);
+                return found ? found.label : type || "알 수 없음";
+            };
 
-            const result = taList.reduce((rows, ta) => {
-                // 선택된 문서 중 같은 과목의 최신 문서 상태만 제출 현황에 반영한다.
-                const matchedDocs = selectedFilteredDocs.filter(doc =>
-                    doc.requestName.includes(ta.lecture)
-                );
+            const signersMap = {};
+            await Promise.all(
+                selectedFilteredDocs.map(async (doc) => {
+                    try {
+                        const signers = await ApiService.fetchSignersByDocument(doc.id);
+                        signersMap[doc.id] = signers;
+                    } catch {
+                        signersMap[doc.id] = [];
+                    }
+                })
+            );
 
-                if (matchedDocs.length === 0) {
-                    return rows;
-                }
+            const toRow = (doc) => {
+                const signerList = signersMap[doc.id] || [];
+                const signerInfo = signerList.length > 0
+                    ? signerList.map(s =>
+                        `${s.name}(${s.email}) - ${s.status === 1 ? `서명 완료 (${moment(s.signedAt).format("YYYY-MM-DD HH:mm")})` : "서명 전"}`
+                    ).join(", ")
+                    : "-";
 
-                const latestDoc = matchedDocs.reduce((a, b) =>
-                    new Date(a.createdAt) > new Date(b.createdAt) ? a : b
-                );
+                return {
+                    "과목명": doc.requestName,
+                    "상태": getStatusLabel(doc.status),
+                    "생성일": moment(doc.createdAt).format("YYYY/MM/DD"),
+                    "만료일": moment(doc.expiredAt).format("YYYY/MM/DD HH:mm"),
+                    "요청자": doc.requesterName || "알 수 없음",
+                    "서명자 정보": signerInfo,
+                };
+            };
 
-                rows.push({
-                    "TA명": ta.taName,
-                    "과목명": ta.lecture,
-                    "상태": getStatusLabel(latestDoc.status)
-                });
-
-                return rows;
-            }, []);
-
-            if (result.length === 0) {
-                alert("선택한 문서와 일치하는 제출 현황이 없습니다.");
-                return;
-            }
-
-            const worksheet = XLSX.utils.json_to_sheet(result);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "TA근무현황");
+            DOCUMENT_TYPES.forEach(({ typeValue, label }) => {
+                const docs = selectedFilteredDocs.filter(doc => doc.type === typeValue);
+                if (docs.length === 0) return;
+                const worksheet = XLSX.utils.json_to_sheet(docs.map(toRow));
+                XLSX.utils.book_append_sheet(workbook, worksheet, label);
+            });
+
+            const unknownDocs = selectedFilteredDocs.filter(
+                doc => !DOCUMENT_TYPES.some(t => t.typeValue === doc.type)
+            );
+            if (unknownDocs.length > 0) {
+                const worksheet = XLSX.utils.json_to_sheet(unknownDocs.map(toRow));
+                XLSX.utils.book_append_sheet(workbook, worksheet, "기타");
+            }
 
             const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
             const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
             const fileName = monthFilter === MONTH_FILTER_ALL
-                ? "TA근무현황.xlsx"
-                : `${Number(monthFilter)}월_TA근무현황.xlsx`;
+                ? "작업현황.xlsx"
+                : `${Number(monthFilter)}월_작업현황.xlsx`;
 
             saveAs(blob, fileName);
         } catch (err) {
