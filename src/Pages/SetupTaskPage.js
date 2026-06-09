@@ -322,7 +322,7 @@ const SetupTaskPage = () => {
                 {taskType === "basicTask" && (
                   <>
                     <div style={{ color: 'red', fontWeight: 'bold', marginBottom: '16px' }}>
-                      🚨 'TA 근무일지' 및 '연구참여확약서' 작업은 '승인 요청 작업' 부분에서 진행해 주세요.
+                      🚨 'TA 근무일지' 및 '연구참여확약서' 작업은 '관리자 승인 문서' 부분에서 진행해 주세요.
                     </div>
                     <FormCard>
                       <CardTitle>작업 기본 정보</CardTitle>
